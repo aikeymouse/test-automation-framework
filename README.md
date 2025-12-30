@@ -2,11 +2,23 @@
 
 A unified test automation framework supporting **Web**, **Mobile**, and **Windows Desktop** applications using .NET 8.0.
 
+## ⚠️ Desktop Automation Branch
+
+This is the **desktop-automation** branch featuring native Windows UI Automation using **Microsoft CsWin32** instead of FlaUI.
+
+### What's Different in This Branch?
+
+- ✅ **Native Windows UI Automation** - Direct Windows API access via CsWin32
+- ✅ **No .NET Framework dependencies** - Pure .NET 8.0 implementation
+- ✅ **No compatibility warnings** - Native support without NU1701 warnings
+- ✅ **Same API surface** - Drop-in replacement for FlaUI with identical usage patterns
+- ✅ **Microsoft-maintained** - Uses official Windows APIs
+
 ## Features
 
 - 🌐 **Web Automation** - Selenium WebDriver with EdgeDriver support for WebView2
 - 📱 **Mobile Automation** - Appium for iOS and Android testing
-- 🖥️ **Windows Desktop Automation** - FlaUI for Windows UI Automation
+- 🖥️ **Windows Desktop Automation** - Native UI Automation via CsWin32
 - 🔄 **Unified API** - Common `ElementLocator` pattern across all platforms
 - 🧪 **BDD Support** - Reqnroll (SpecFlow successor) integration
 - 🎯 **Page Object Model** - Built-in base classes for clean test architecture
@@ -18,14 +30,17 @@ AIKeyMouse.Automation.Framework/
 ├── DataObjects/          # ElementLocator, Locator enum, and data models
 ├── Extensions/           # Extension methods for all platforms
 │   ├── LocatorExtension.cs          # Selenium/Appium locator conversion
-│   ├── LocatorExtension.FlaUI.cs    # FlaUI locator conversion
+│   ├── LocatorExtension.Win.cs      # Windows UI Automation locator conversion
 │   ├── SearchContextExtension.cs    # Web/Mobile element finding with waits
-│   ├── SearchContextExtension.FlaUI.cs # Windows element finding with waits
-│   └── WindowExtension.cs           # FlaUI Window helpers
+│   ├── SearchContextExtension.Win.cs # Windows element finding with waits
+│   └── WindowExtension.cs           # Window helpers
 ├── Infrastructure/       # Core framework classes
 │   ├── DriverContext.cs             # Base driver management
 │   ├── DriverContextWeb.cs          # Web/WebView2 driver management
 │   ├── DriverContextWindows.cs      # Windows app driver management
+│   ├── UIAutomationApplication.cs   # Windows app lifecycle management
+│   ├── UIAutomationWindow.cs        # Window element wrapper
+│   ├── UIAutomationElement.cs       # Element wrapper with UI Automation patterns
 │   ├── PageBase.cs                  # Base class for page objects
 │   └── ConfiguredSettings.cs        # Framework configuration
 ├── Helpers/             # Helper utilities
@@ -38,13 +53,14 @@ AIKeyMouse.Automation.Framework/
 - **Reqnroll 3.3.0** - BDD framework
 - **Selenium.WebDriver 4.39.0** - Web automation
 - **Appium.WebDriver 8.0.1** - Mobile automation
-- **FlaUI.Core 5.0.0** & **FlaUI.UIA3 5.0.0** - Windows UI automation
+- **Microsoft.Windows.CsWin32 0.3.106** - Windows API code generation
 - **Selenium.WebDriver.MSEdgeDriver 141.0.3537.71** - EdgeDriver for WebView2
 - **MSTest.TestFramework 4.0.2** - Testing framework
 - **WebDriverManager 2.17.6** - Browser driver management
 
 ### Target Framework
-- **.NET 8.0** (LTS)
+- **.NET 8.0-windows10.0.22621.0** (Windows 11 SDK)
+
 
 ## Quick Start
 
@@ -106,8 +122,8 @@ var element3 = new ElementLocator(Locator.Name, "Submit");
 
 ### Supported Locator Types
 
-| Locator Type | Web/Mobile | Windows (FlaUI) |
-|--------------|------------|-----------------|
+| Locator Type | Web/Mobile | Windows (UI Automation) |
+|--------------|------------|---------------------|
 | `Id` | ✅ | ✅ (AutomationId) |
 | `Name` | ✅ | ✅ |
 | `ClassName` | ✅ | ✅ |
@@ -127,7 +143,7 @@ All element finding operations include built-in wait logic:
 var element = searchContext.GetElement(locator); // Default timeout
 var element = searchContext.GetElement(locator, TimeSpan.FromSeconds(20)); // Custom timeout
 
-// Windows - uses FlaUI Retry with configured timeout
+// Windows - uses custom retry logic with configured timeout
 var element = window.GetElement(locator); // Default timeout
 var button = window.GetButton(locator); // Strongly-typed, with wait
 ```
@@ -178,13 +194,13 @@ public class ConfiguredSettings
 ## Requirements
 
 - .NET 8.0 SDK or later
-- Windows OS (for FlaUI/Windows automation)
+- Windows OS (for Windows desktop automation)
 - WebDrivers (managed automatically by WebDriverManager)
 - Appium Server (for mobile testing)
 
 ## Known Issues
 
-- FlaUI packages show NU1701 warnings (compatibility warnings) - these are safe to ignore as FlaUI works correctly on .NET 8.0
+None currently known for the desktop-automation branch. The native UI Automation implementation eliminates the NU1701 warnings present in the FlaUI-based main branch.
 
 ## License
 
