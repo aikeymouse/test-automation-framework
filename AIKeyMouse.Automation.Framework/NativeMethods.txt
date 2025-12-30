@@ -1,0 +1,15 @@
+CUIAutomation8
+IUIAutomationElement
+IUIAutomationElementArray
+IUIAutomation
+IUIAutomationCondition
+IUIAutomationInvokePattern
+IUIAutomationValuePattern
+IUIAutomationTogglePattern
+IUIAutomationExpandCollapsePattern
+IUIAutomationSelectionItemPattern
+UIA_PROPERTY_ID
+UIA_CONTROLTYPE_ID
+UIA_PATTERN_ID
+TreeScope
+ToggleState

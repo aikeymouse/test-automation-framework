@@ -1,75 +1,38 @@
-using FlaUI.Core;
-using FlaUI.UIA3;
 using OpenQA.Selenium.Edge;
-using FlaUI.Core.AutomationElements;
 
 namespace AIKeyMouse.Automation.Framework.Infrastructure;
 
 public partial class DriverContext
 {
-    private Application? _application;
-    private UIA3Automation? _automation;
-    private Window? _window;
+    private UIAutomationApplication? _application;
+    private UIAutomationWindow? _window;
 
-    public Application? Application => _application;
-    public UIA3Automation? Automation => _automation;
-    public Window? Window => _window;
+    public UIAutomationApplication? Application => _application;
+    public UIAutomationWindow? Window => _window;
 
     public void StartWindowsApplication(string applicationPath, string? arguments = null)
     {
-        if (string.IsNullOrWhiteSpace(applicationPath))
-        {
-            throw new ArgumentException("Application path cannot be null or empty.", nameof(applicationPath));
-        }
-
-        if (!File.Exists(applicationPath))
-        {
-            throw new FileNotFoundException($"Application not found at path: {applicationPath}");
-        }
-
-        _automation = new UIA3Automation();
-        
-        if (string.IsNullOrWhiteSpace(arguments))
-        {
-            _application = Application.Launch(applicationPath);
-        }
-        else
-        {
-            _application = Application.Launch(applicationPath, arguments);
-        }
-        
+        _application = UIAutomationApplication.Launch(applicationPath, arguments);
         InitializeWindow();
     }
 
     private void InitializeWindow()
     {
-        if (_application != null && _automation != null)
+        if (_application != null)
         {
-            _window = _application.GetMainWindow(_automation);
+            _window = _application.GetMainWindow();
         }
     }
 
     public void AttachToWindowsApplication(int processId)
     {
-        if (processId <= 0)
-        {
-            throw new ArgumentException("Process ID must be greater than zero.", nameof(processId));
-        }
-
-        _automation = new UIA3Automation();
-        _application = Application.Attach(processId);
+        _application = UIAutomationApplication.Attach(processId);
         InitializeWindow();
     }
 
     public void AttachToWindowsApplication(string executableName)
     {
-        if (string.IsNullOrWhiteSpace(executableName))
-        {
-            throw new ArgumentException("Executable name cannot be null or empty.", nameof(executableName));
-        }
-
-        _automation = new UIA3Automation();
-        _application = Application.Attach(executableName);
+        _application = UIAutomationApplication.Attach(executableName);
         InitializeWindow();
     }
 
@@ -97,6 +60,18 @@ public partial class DriverContext
     {
         // Close WebDriver (WebView2 or browser) if attached
         if (_webDriver != null)
+        {
+            _webDriver.Quit();
+            _webDriver.Dispose();
+            _webDriver = null;
+        }
+
+        // Close Windows application
+        _application?.Dispose();
+        _application = null;
+        _window = null;
+    }
+}
         {
             _webDriver.Quit();
             _webDriver.Dispose();
