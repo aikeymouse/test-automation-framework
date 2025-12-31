@@ -21,15 +21,15 @@ public static partial class LocatorExtension
     }
 
     // FlaUI - Convert ElementLocator to find all elements action
-    public static Func<Window, AutomationElement[]> ToFindAllAction(this ElementLocator locator)
+    public static Func<Window, List<AutomationElement>> ToFindAllAction(this ElementLocator locator)
     {
         return locator.Kind switch
         {
-            Locator.Id => window => window.FindAllDescendants(cf => cf.ByAutomationId(locator.Value)),
-            Locator.Name => window => window.FindAllDescendants(cf => cf.ByName(locator.Value)),
-            Locator.ClassName => window => window.FindAllDescendants(cf => cf.ByClassName(locator.Value)),
-            Locator.XPath => window => window.FindAllByXPath(locator.Value),
-            Locator.TagName => window => window.FindAllDescendants(cf => cf.ByControlType(GetControlType(locator.Value))),
+            Locator.Id => window => window.FindAllDescendants(cf => cf.ByAutomationId(locator.Value))?.ToList() ?? [],
+            Locator.Name => window => window.FindAllDescendants(cf => cf.ByName(locator.Value))?.ToList() ?? [],
+            Locator.ClassName => window => window.FindAllDescendants(cf => cf.ByClassName(locator.Value))?.ToList() ?? [],
+            Locator.XPath => window => window.FindAllByXPath(locator.Value)?.ToList() ?? [],
+            Locator.TagName => window => window.FindAllDescendants(cf => cf.ByControlType(GetControlType(locator.Value)))?.ToList() ?? [],
             _ => throw new ArgumentException($"Locator type {locator.Kind} is not supported for FlaUI")
         };
     }

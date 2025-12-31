@@ -36,11 +36,11 @@ public static partial class SearchContextExtension
     }
 
     // FlaUI - GetElements with ElementLocator
-    public static AutomationElement[] GetElements(this Window? window, ElementLocator locator)
+    public static List<AutomationElement> GetElements(this Window? window, ElementLocator locator)
     {
-        if (window == null) return Array.Empty<AutomationElement>();
+        if (window == null) return [];
         var elements = locator.ToFindAllAction()(window);
-        return elements ?? Array.Empty<AutomationElement>();
+        return elements?.ToList() ?? [];
     }
 
     // Strongly-typed helper methods for FlaUI
