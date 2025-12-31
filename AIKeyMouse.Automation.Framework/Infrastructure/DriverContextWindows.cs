@@ -98,6 +98,8 @@ public partial class DriverContext
         var filePath = this.GetResultsFilePath("edgedriver.log");
         
         var edgeDriverService = EdgeDriverService.CreateDefaultService(EdgeDriverPath);
+        edgeDriverService.LogPath = filePath;
+        edgeDriverService.EnableAppendLog = ConfiguredSettings.Instance.DriverLog;
         _webDriver = new EdgeDriver(edgeDriverService, edgeOptions);
     }
 
