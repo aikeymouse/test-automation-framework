@@ -47,9 +47,14 @@ jobs:
         shell: pwsh
       
       - name: Publish to GitHub Packages
+        shell: pwsh
         run: |
           dotnet nuget add source --username aikeymouse --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/aikeymouse/index.json"
-          dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.GITHUB_TOKEN }} --source "github" --skip-duplicate
+          $packages = Get-ChildItem -Path ./nupkg -Filter *.nupkg
+          foreach ($package in $packages) {
+            Write-Output "Pushing $($package.FullName)"
+            dotnet nuget push $package.FullName --api-key ${{ secrets.GITHUB_TOKEN }} --source "github" --skip-duplicate
+          }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
