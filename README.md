@@ -2,6 +2,15 @@
 
 A unified test automation framework supporting **Web**, **Mobile**, and **Windows Desktop** applications using .NET 8.0.
 
+## Installation
+
+This package is available via **GitHub Packages**. For installation instructions, see [CONSUMING_PACKAGE.md](CONSUMING_PACKAGE.md).
+
+Quick install (after configuring GitHub Packages):
+```bash
+dotnet add package AIKeyMouse.Automation.Framework
+```
+
 ## Features
 
 - 🌐 **Web Automation** - Selenium WebDriver with EdgeDriver support for WebView2

@@ -4,7 +4,35 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    
+    <!-- NuGet Package Metadata -->
+    <PackageId>AIKeyMouse.Automation.Framework</PackageId>
+    <Version>0.0.1</Version>
+    <Authors>aikeymouse</Authors>
+    <Company>AIKeyMouse</Company>
+    <Product>AIKeyMouse Automation Framework</Product>
+    <Description>A unified test automation framework supporting Web (Selenium), Mobile (Appium), and Windows Desktop (FlaUI) applications using .NET 8.0 and Reqnroll. This is a pre-release version under active development.</Description>
+    <PackageTags>automation;testing;selenium;appium;flaui;reqnroll;specflow;bdd;test-framework;windows;mobile;web</PackageTags>
+    <PackageProjectUrl>https://github.com/aikeymouse/test-automation-framework</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/aikeymouse/test-automation-framework</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>Pre-release version with experimental support for Web, Mobile, and Windows Desktop automation.</PackageReleaseNotes>
+    <Copyright>Copyright (c) 2025 AIKeyMouse</Copyright>
+    
+    <!-- Optional: Generate package on build -->
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    
+    <!-- Optional: Include symbols for debugging -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Include README in the package -->
+    <None Include="../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Appium.WebDriver" Version="8.0.1" />
