@@ -15,6 +15,7 @@ public sealed class ConfiguredSettings
     public string TestResultsPath { get; set; } = "TestResults";
     public double ShortTimeout { get; set; } = 5.0;
     public double LongTimeout { get; set; } = 30.0;
+    public string WebView2DebuggerAddress { get; set; } = "localhost:9222";
 
     private ConfiguredSettings()
     {
@@ -25,6 +26,7 @@ public sealed class ConfiguredSettings
         TestResultsPath = GetConfigurationSetting("TestResultsPath");
         ShortTimeout = Convert.ToDouble(GetConfigurationSetting("ShortTimeout"));
         LongTimeout = Convert.ToDouble(GetConfigurationSetting("LongTimeout"));
+        WebView2DebuggerAddress = GetConfigurationSetting("WebView2DebuggerAddress");
     }
 
     private static string GetConfigurationSetting(string key)

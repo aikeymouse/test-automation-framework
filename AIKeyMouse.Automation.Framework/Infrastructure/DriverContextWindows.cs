@@ -79,18 +79,134 @@ public partial class DriverContext
     /// To enable in your app: --remote-debugging-port=9222
     /// </summary>
     /// <param name="debuggingPort">The port where WebView2 remote debugging is listening (default: 9222)</param>
-    public void AttachToWebView2(int debuggingPort = 9222)
+    public void AttachToWebView2()
     {
         if (_webDriver != null)
         {
             throw new InvalidOperationException("WebDriver is already attached. Close it before attaching again.");
         }
 
-        var edgeOptions = new EdgeOptions();
-        edgeOptions.DebuggerAddress = $"localhost:{debuggingPort}";
+        EdgeOptions edgeOptions = new EdgeOptions {
+            UseWebView = true,
+            DebuggerAddress = ConfiguredSettings.Instance.WebView2DebuggerAddress,
+            UnhandledPromptBehavior = ConfiguredSettings.Instance.IgnoreUnhandledPrompt ? UnhandledPromptBehavior.Dismiss : UnhandledPromptBehavior.Default,
+            PageLoadStrategy = PageLoadStrategy.Normal
+        };
+
+        var filePath = this.GetResultsFilePath("edgedriver.log");
         
-        var edgeDriverService = EdgeDriverService.CreateDefaultService();
+        var edgeDriverService = EdgeDriverService.CreateDefaultService(EdgeDriverPath);
         _webDriver = new EdgeDriver(edgeDriverService, edgeOptions);
+    }
+
+    private string EdgeDriverPath
+    {
+        get
+        {
+            string? edgeDriverPath;
+            
+            // Get WebView2 runtime version
+            string? webView2Version = GetWebView2RuntimeVersion();
+            
+            try
+            {
+                if (!string.IsNullOrEmpty(webView2Version))
+                {
+                    // Try to get matching driver for WebView2 version
+                    edgeDriverPath = new FileInfo(
+                        new WebDriverManager.DriverManager().SetUpDriver(
+                            new WebDriverManager.DriverConfigs.Impl.EdgeConfig(),
+                            webView2Version)
+                            )?.Directory?.FullName;
+                }
+                else
+                {
+                    // Fallback to matching browser strategy
+                    edgeDriverPath = new FileInfo(
+                        new WebDriverManager.DriverManager().SetUpDriver(
+                            new WebDriverManager.DriverConfigs.Impl.EdgeConfig(),
+                            WebDriverManager.Helpers.VersionResolveStrategy.MatchingBrowser)
+                            )?.Directory?.FullName;
+                }
+            }
+            catch (Exception)
+            {
+                // Final fallback to latest
+                edgeDriverPath = new FileInfo(
+                    new WebDriverManager.DriverManager().SetUpDriver(
+                        new WebDriverManager.DriverConfigs.Impl.EdgeConfig(),
+                        WebDriverManager.Helpers.VersionResolveStrategy.Latest)
+                        )?.Directory?.FullName;
+            }
+
+            if (edgeDriverPath == null || !Directory.Exists(edgeDriverPath))
+            {
+                throw new DirectoryNotFoundException("Edge Driver path could not be determined.");
+            }
+
+            return edgeDriverPath;
+        }
+    }
+
+    private static string? GetWebView2RuntimeVersion()
+    {
+        try
+        {
+            // Check Program Files (x64)
+            string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            string webView2Path = Path.Combine(programFiles, "Microsoft", "EdgeWebView", "Application");
+            
+            if (Directory.Exists(webView2Path))
+            {
+                // Get version directories (e.g., "120.0.2210.121")
+                var versionDirs = Directory.GetDirectories(webView2Path)
+                    .Select(d => new DirectoryInfo(d).Name)
+                    .Where(name => System.Text.RegularExpressions.Regex.IsMatch(name, @"^\d+\.\d+\.\d+\.\d+$"))
+                    .OrderByDescending(v => v)
+                    .ToList();
+                
+                // Check if msedgewebview2.exe exists in the version directory
+                foreach (var versionDir in versionDirs)
+                {
+                    string exePath = Path.Combine(webView2Path, versionDir, "msedgewebview2.exe");
+                    if (File.Exists(exePath))
+                    {
+                        // Get file version from the executable
+                        var fileVersionInfo = System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath);
+                        return fileVersionInfo.FileVersion ?? versionDir;
+                    }
+                }
+            }
+
+            // Check Program Files (x86) if not found
+            string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+            string webView2PathX86 = Path.Combine(programFilesX86, "Microsoft", "EdgeWebView", "Application");
+            
+            if (Directory.Exists(webView2PathX86))
+            {
+                var versionDirs = Directory.GetDirectories(webView2PathX86)
+                    .Select(d => new DirectoryInfo(d).Name)
+                    .Where(name => System.Text.RegularExpressions.Regex.IsMatch(name, @"^\d+\.\d+\.\d+\.\d+$"))
+                    .OrderByDescending(v => v)
+                    .ToList();
+                
+                foreach (var versionDir in versionDirs)
+                {
+                    string exePath = Path.Combine(webView2PathX86, versionDir, "msedgewebview2.exe");
+                    if (File.Exists(exePath))
+                    {
+                        var fileVersionInfo = System.Diagnostics.FileVersionInfo.GetVersionInfo(exePath);
+                        return fileVersionInfo.FileVersion ?? versionDir;
+                    }
+                }
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public void CloseWindowsApplication()
