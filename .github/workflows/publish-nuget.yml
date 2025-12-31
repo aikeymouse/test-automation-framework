@@ -39,15 +39,8 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore AIKeyMouse.Automation.Framework/AIKeyMouse.Automation.Framework.csproj
       
-      - name: Build
-        run: dotnet build AIKeyMouse.Automation.Framework/AIKeyMouse.Automation.Framework.csproj -c Release --no-restore
-      
-      - name: Create output directory
-        run: New-Item -ItemType Directory -Force -Path ./nupkg
-        shell: pwsh
-      
-      - name: Pack
-        run: dotnet pack AIKeyMouse.Automation.Framework/AIKeyMouse.Automation.Framework.csproj -c Release --no-build --output ./nupkg /p:PackageVersion=${{ steps.version.outputs.VERSION }}
+      - name: Pack (build and pack together)
+        run: dotnet pack AIKeyMouse.Automation.Framework/AIKeyMouse.Automation.Framework.csproj -c Release --output ./nupkg /p:PackageVersion=${{ steps.version.outputs.VERSION }}
       
       - name: List package files
         run: Get-ChildItem -Path ./nupkg -Recurse
