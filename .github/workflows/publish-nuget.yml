@@ -25,6 +25,19 @@ jobs:
         with:
           dotnet-version: 8.0.x
       
+      - name: Extract version from tag or use default
+        id: version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -match '^refs/tags/v(.+)$') {
+            $version = $matches[1]
+            Write-Output "Using tag version: $version"
+          } else {
+            $version = "0.0.1-dev.$env:GITHUB_RUN_NUMBER"
+            Write-Output "Using dev version: $version"
+          }
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+      
       - name: Restore dependencies
         run: dotnet restore AIKeyMouse.Automation.Framework/AIKeyMouse.Automation.Framework.csproj
       
@@ -32,7 +45,7 @@ jobs:
         run: dotnet build AIKeyMouse.Automation.Framework/AIKeyMouse.Automation.Framework.csproj -c Release --no-restore
       
       - name: Pack
-        run: dotnet pack AIKeyMouse.Automation.Framework/AIKeyMouse.Automation.Framework.csproj -c Release --no-build --output ./nupkg
+        run: dotnet pack AIKeyMouse.Automation.Framework/AIKeyMouse.Automation.Framework.csproj -c Release --no-build --output ./nupkg /p:PackageVersion=${{ steps.version.outputs.VERSION }}
       
       - name: Publish to GitHub Packages
         run: |
