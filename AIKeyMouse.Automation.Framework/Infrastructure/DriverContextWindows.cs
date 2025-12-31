@@ -1,7 +1,9 @@
 using FlaUI.Core;
 using FlaUI.UIA3;
+using OpenQA.Selenium;
 using OpenQA.Selenium.Edge;
 using FlaUI.Core.AutomationElements;
+using AIKeyMouse.Automation.Framework.Extensions;
 
 namespace AIKeyMouse.Automation.Framework.Infrastructure;
 
