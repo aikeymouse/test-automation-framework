@@ -88,7 +88,8 @@ public partial class DriverContext
             throw new InvalidOperationException("WebDriver is already attached. Close it before attaching again.");
         }
 
-        EdgeOptions edgeOptions = new EdgeOptions {
+        EdgeOptions edgeOptions = new()
+        {
             UseWebView = true,
             DebuggerAddress = ConfiguredSettings.Instance.WebView2DebuggerAddress,
             UnhandledPromptBehavior = ConfiguredSettings.Instance.IgnoreUnhandledPrompt ? UnhandledPromptBehavior.Dismiss : UnhandledPromptBehavior.Default,
