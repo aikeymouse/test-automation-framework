@@ -165,6 +165,40 @@ public partial class DriverContext
         _browserStackLocal.start(bsOptions);
     }
 
+    public void SetNativeContext()
+    {
+        if (_driver == null)
+        {
+            throw new InvalidOperationException("Appium driver is not initialized.");
+        }
+
+        var context = _driver.Context;
+        if (!context.Equals("NATIVE_APP", StringComparison.OrdinalIgnoreCase))
+        {
+            _driver.Context = "NATIVE_APP";
+        }
+    }
+
+    public void SetWebViewContext(string contextName = "WEBVIEW")
+    {
+        if (_driver == null)
+        {
+            throw new InvalidOperationException("Appium driver is not initialized.");
+        }
+
+        var contexts = _driver.Contexts;
+        foreach (var ctx in contexts)
+        {
+            if (ctx.Contains(contextName, StringComparison.CurrentCultureIgnoreCase))
+            {
+                _driver.Context = ctx;
+                return;
+            }
+        }
+
+        throw new InvalidOperationException("No WebView context found.");
+    }
+
     public void Dispose()
     {
         // Dispose Appium driver
@@ -173,6 +207,15 @@ public partial class DriverContext
             _driver.Quit();
             _driver.Dispose();
             _driver = null;
+        }
+
+        _appiumLocalService?.Dispose();
+        _appiumLocalService = null;
+
+        if (_browserStackLocal != null && _browserStackLocal.isRunning())
+        {
+            _browserStackLocal.stop();
+            _browserStackLocal = null;
         }
 
         // Dispose Web driver (handled in DriverContextWeb.cs)
