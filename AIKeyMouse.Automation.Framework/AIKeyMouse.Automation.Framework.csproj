@@ -36,6 +36,7 @@
 
   <ItemGroup>
     <PackageReference Include="Appium.WebDriver" Version="8.0.1" />
+    <PackageReference Include="BrowserStackLocal" Version="3.0.0" />
     <PackageReference Include="FlaUI.Core" Version="5.0.0" />
     <PackageReference Include="FlaUI.UIA3" Version="5.0.0" />
     <PackageReference Include="MSTest.TestFramework" Version="4.0.2" />
