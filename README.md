@@ -24,33 +24,49 @@ dotnet add package AIKeyMouse.Automation.Framework
 
 ```
 AIKeyMouse.Automation.Framework/
-├── DataObjects/          # ElementLocator, Locator enum, and data models
+├── DataObjects/          # Data models and locator definitions
+│   ├── ElementLocator.cs            # Unified locator for all platforms
+│   ├── Locator.cs                   # Locator strategy enum
+│   ├── EnumValueAttribute.cs        # Attribute for enum values
+│   ├── MobileDeviceSettings.cs      # Mobile device configuration
+│   ├── MobileDeviceType.cs          # Mobile device type enum
+│   └── NetworkConditionsData.cs     # Network simulation data
 ├── Extensions/           # Extension methods for all platforms
 │   ├── LocatorExtension.cs          # Selenium/Appium locator conversion
 │   ├── LocatorExtension.FlaUI.cs    # FlaUI locator conversion
 │   ├── SearchContextExtension.cs    # Web/Mobile element finding with waits
 │   ├── SearchContextExtension.FlaUI.cs # Windows element finding with waits
-│   └── WindowExtension.cs           # FlaUI Window helpers
+│   ├── WindowExtension.cs           # FlaUI Window helpers
+│   ├── DriverContextExtension.cs    # Driver context helpers
+│   └── TestContextExtension.cs      # Test context helpers
 ├── Infrastructure/       # Core framework classes
 │   ├── DriverContext.cs             # Base driver management
 │   ├── DriverContextWeb.cs          # Web/WebView2 driver management
 │   ├── DriverContextWindows.cs      # Windows app driver management
+│   ├── DriverContextProperties.cs   # Driver context properties
 │   ├── PageBase.cs                  # Base class for page objects
-│   └── ConfiguredSettings.cs        # Framework configuration
+│   ├── StepsBase.cs                 # Base class for step definitions
+│   ├── ConfiguredSettings.cs        # Framework configuration
+│   └── DriverOptionsSetEventArgs.cs # Event args for driver options
 ├── Helpers/             # Helper utilities
+│   └── DevToolsHelper.cs            # Chrome DevTools Protocol helpers
 └── StepDefinitions/     # Reqnroll step definitions
+    └── DevToolsSteps.cs             # DevTools-related steps
 ```
 
 ## Supported Technologies
 
 ### NuGet Packages
-- **Reqnroll 3.3.0** - BDD framework
+- **Reqnroll 3.3.1** - BDD framework
+- **Reqnroll.MSTest 3.3.1** - MSTest integration for Reqnroll
+- **Reqnroll.Tools.MsBuild.Generation 3.3.1** - Build-time code generation
 - **Selenium.WebDriver 4.39.0** - Web automation
 - **Appium.WebDriver 8.0.1** - Mobile automation
 - **FlaUI.Core 5.0.0** & **FlaUI.UIA3 5.0.0** - Windows UI automation
 - **Selenium.WebDriver.MSEdgeDriver 141.0.3537.71** - EdgeDriver for WebView2
 - **MSTest.TestFramework 4.0.2** - Testing framework
 - **WebDriverManager 2.17.6** - Browser driver management
+- **BrowserStackLocal 3.0.0** - BrowserStack tunnel support
 
 ### Target Framework
 - **.NET 8.0** (LTS)
