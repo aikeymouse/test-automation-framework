@@ -272,7 +272,8 @@ AIKeyMouse.CodeGen.CLI/
 
 ## Documentation
 
-See [CODEGEN_CLI_PLAN.md](../CODEGEN_CLI_PLAN.md) for the complete implementation plan.
+- [Configuration Guide](CONFIGURATION.md) - Complete reference for all `appsettings.json` settings
+- [Implementation Plan](../CODEGEN_CLI_PLAN.md) - Complete implementation plan
 
 ## License
 
