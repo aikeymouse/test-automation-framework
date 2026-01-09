@@ -48,14 +48,21 @@ class Program
             builder.Services.AddSingleton(cliConfig.Llm.Groq);
             builder.Services.AddSingleton(cliConfig.Llm.HuggingFace);
             
+            // Get HTTP client timeout from configuration
+            var httpClientTimeout = TimeSpan.FromSeconds(cliConfig.Llm.HttpClientTimeoutSeconds);
+            Log.Information("Configuring HttpClient timeout: {Timeout} seconds", cliConfig.Llm.HttpClientTimeoutSeconds);
+            
             // Register HTTP clients with Polly retry policies
             builder.Services.AddHttpClient<OllamaProvider>()
+                .ConfigureHttpClient(client => client.Timeout = httpClientTimeout)
                 .AddPolicyHandler(GetRetryPolicy());
             
             builder.Services.AddHttpClient<GroqProvider>()
+                .ConfigureHttpClient(client => client.Timeout = httpClientTimeout)
                 .AddPolicyHandler(GetRetryPolicy());
                 
             builder.Services.AddHttpClient<HuggingFaceProvider>()
+                .ConfigureHttpClient(client => client.Timeout = httpClientTimeout)
                 .AddPolicyHandler(GetRetryPolicy());
             
             // Register LLM providers (in priority order: Ollama -> Groq -> HuggingFace)
