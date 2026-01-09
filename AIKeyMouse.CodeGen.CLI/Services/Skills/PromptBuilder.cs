@@ -11,11 +11,16 @@ public class PromptBuilder
 {
     private readonly ILogger<PromptBuilder> _logger;
     private readonly FluidParser _parser;
+    private readonly TemplateOptions _templateOptions;
 
     public PromptBuilder(ILogger<PromptBuilder> logger)
     {
         _logger = logger;
         _parser = new FluidParser();
+        
+        // Configure Fluid to allow member access on anonymous objects
+        _templateOptions = new TemplateOptions();
+        _templateOptions.MemberAccessStrategy.Register<object>();
     }
 
     /// <summary>
@@ -33,8 +38,8 @@ public class PromptBuilder
                 throw new InvalidOperationException($"Failed to parse prompt template: {error}");
             }
 
-            // Create template context
-            var templateContext = new TemplateContext(context);
+            // Create template context with configured options
+            var templateContext = new TemplateContext(context, _templateOptions);
             
             // Add skill metadata to context
             templateContext.SetValue("skill", new

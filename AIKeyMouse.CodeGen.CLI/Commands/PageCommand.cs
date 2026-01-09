@@ -71,12 +71,30 @@ public class PageCommand : BaseCommand
             {
                 var parsedPage = await ParsePageAsync(url, htmlFile);
                 
-                context["elements"] = parsedPage.Elements.Select(e => new
+                // Log parsed elements in detail (debug level)
+                Logger.LogDebug("==== PARSED ELEMENTS ====");
+                foreach (var element in parsedPage.Elements)
                 {
-                    name = e.Name,
-                    type = e.Type,
-                    locator = e.CssSelector ?? e.XPath
+                    Logger.LogDebug("  - {Name} ({Type}): {Locator}", 
+                        element.Name, element.Type, element.CssSelector ?? element.XPath);
+                }
+                Logger.LogDebug("========================");
+                
+                var elementsList = parsedPage.Elements.Select(e => new Dictionary<string, object>
+                {
+                    ["name"] = e.Name,
+                    ["type"] = e.Type,
+                    ["locator"] = e.CssSelector ?? e.XPath
                 }).ToList();
+                
+                context["elements"] = elementsList;
+
+                // Debug: Log what we're passing to the template
+                Logger.LogDebug("Context elements count: {Count}", elementsList.Count);
+                foreach (var elem in elementsList)
+                {
+                    Logger.LogDebug("Element in context: {Element}", System.Text.Json.JsonSerializer.Serialize(elem));
+                }
 
                 if (!string.IsNullOrWhiteSpace(parsedPage.Title))
                 {
@@ -89,6 +107,13 @@ public class PageCommand : BaseCommand
             var userPrompt = await _promptBuilder.BuildPromptAsync(skill, context);
             var systemPrompt = _promptBuilder.BuildSystemMessage(skill);
 
+            // Log prompts at debug level
+            Logger.LogDebug("==== SYSTEM PROMPT ====");
+            Logger.LogDebug("{SystemPrompt}", systemPrompt);
+            Logger.LogDebug("==== USER PROMPT ====");
+            Logger.LogDebug("{UserPrompt}", userPrompt);
+            Logger.LogDebug("======================");
+
             // Generate code using LLM
             DisplayInfo($"Generating code using {skill.Name}...");
             var llmRequest = new LlmRequest
@@ -98,6 +123,9 @@ public class PageCommand : BaseCommand
                 Temperature = (float)(skill.LlmParams?.Temperature ?? Config.Llm.Temperature),
                 MaxTokens = skill.LlmParams?.MaxTokens ?? Config.Llm.MaxTokens
             };
+
+            Logger.LogDebug("LLM Request - Temperature: {Temperature}, MaxTokens: {MaxTokens}",
+                llmRequest.Temperature, llmRequest.MaxTokens);
 
             var response = await _llmFactory.GenerateWithFailoverAsync(llmRequest);
             
