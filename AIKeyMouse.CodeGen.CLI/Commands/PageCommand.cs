@@ -178,7 +178,7 @@ public class PageCommand : BaseCommand
         // Load built-in skill based on platform
         var builtInSkillPath = platform.ToLowerInvariant() switch
         {
-            "web" => Path.Combine(AppContext.BaseDirectory, "Skills", "PageObjects", "page-object-web.skill.json"),
+            "web" => Path.Combine(AppContext.BaseDirectory, "Skills", "PageObjects", "page-object-web.skill.md"),
             "mobile" => Path.Combine(AppContext.BaseDirectory, "Skills", "PageObjects", "page-object-mobile.skill.json"),
             "desktop" => Path.Combine(AppContext.BaseDirectory, "Skills", "PageObjects", "page-object-desktop.skill.json"),
             _ => throw new ArgumentException($"Unsupported platform: {platform}")

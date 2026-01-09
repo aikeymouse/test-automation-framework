@@ -8,19 +8,21 @@ using YamlDotNet.Serialization.NamingConventions;
 namespace AIKeyMouse.CodeGen.CLI.Services.Skills;
 
 /// <summary>
-/// Loads skills from JSON/YAML files with inheritance support
+/// Loads skills from JSON/YAML/Markdown files with inheritance support
 /// </summary>
 public class SkillLoader
 {
     private readonly FileService _fileService;
     private readonly ILogger<SkillLoader> _logger;
+    private readonly SkillMarkdownParser _markdownParser;
     private readonly Dictionary<string, Skill> _skillCache = new();
     private readonly IDeserializer _yamlDeserializer;
 
-    public SkillLoader(FileService fileService, ILogger<SkillLoader> logger)
+    public SkillLoader(FileService fileService, ILogger<SkillLoader> logger, SkillMarkdownParser markdownParser)
     {
         _fileService = fileService;
         _logger = logger;
+        _markdownParser = markdownParser;
         
         _yamlDeserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
@@ -28,7 +30,7 @@ public class SkillLoader
     }
 
     /// <summary>
-    /// Load a skill from file (JSON or YAML)
+    /// Load a skill from file (JSON, YAML, or Markdown)
     /// </summary>
     public async Task<Skill> LoadSkillAsync(string path, CancellationToken cancellationToken = default)
     {
@@ -58,6 +60,10 @@ public class SkillLoader
         {
             skill = _yamlDeserializer.Deserialize<Skill>(content)
                 ?? throw new InvalidOperationException($"Failed to deserialize skill from {path}");
+        }
+        else if (extension == ".md")
+        {
+            skill = _markdownParser.Parse(content);
         }
         else
         {
@@ -94,7 +100,8 @@ public class SkillLoader
         
         var skillFiles = _fileService.GetFiles(directoryPath, "*.skill.json", recursive)
             .Concat(_fileService.GetFiles(directoryPath, "*.skill.yaml", recursive))
-            .Concat(_fileService.GetFiles(directoryPath, "*.skill.yml", recursive));
+            .Concat(_fileService.GetFiles(directoryPath, "*.skill.yml", recursive))
+            .Concat(_fileService.GetFiles(directoryPath, "*.skill.md", recursive));
 
         foreach (var file in skillFiles)
         {
@@ -209,9 +216,11 @@ public class SkillLoader
         // Try as relative path first
         var relativePath = Path.Combine(baseDirectory, skillRef);
         
-        // Add extension if not present
+        // Add extension if not present - check in order: .md, .json, .yaml, .yml
         if (!Path.HasExtension(relativePath))
         {
+            if (File.Exists($"{relativePath}.skill.md"))
+                return $"{relativePath}.skill.md";
             if (File.Exists($"{relativePath}.skill.json"))
                 return $"{relativePath}.skill.json";
             if (File.Exists($"{relativePath}.skill.yaml"))

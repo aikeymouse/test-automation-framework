@@ -66,12 +66,13 @@
     <PackageReference Include="System.Text.Json" Version="9.0.1" />
     
     <!-- YAML Support (optional, for skills) -->
-    <PackageReference Include="YamlDotNet" Version="16.2.1" />
+    <PackageReference Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Embed Skills, Templates, and Config as resources -->
     <None Update="Skills\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Skills\**\*.md" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Templates\**\*.liquid" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Config\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

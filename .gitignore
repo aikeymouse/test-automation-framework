@@ -111,3 +111,8 @@ ehthumbs.db
 Desktop.ini
 ded.notes.txt
 AIKeyMouse.CodeGen.CLI/test-login.html
+
+# Code Gen CLI - Skill files
+# Markdown (.skill.md) is the source of truth
+# JSON files can be regenerated
+**/*.skill.json

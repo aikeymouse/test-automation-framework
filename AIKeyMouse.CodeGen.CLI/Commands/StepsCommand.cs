@@ -191,7 +191,7 @@ public class StepsCommand : BaseCommand
         // Load built-in skill based on platform
         var builtInSkillPath = platform.ToLowerInvariant() switch
         {
-            "web" => Path.Combine(AppContext.BaseDirectory, "Skills", "StepDefinitions", "step-definition-web.skill.json"),
+            "web" => Path.Combine(AppContext.BaseDirectory, "Skills", "StepDefinitions", "step-definition-web.skill.md"),
             "mobile" => Path.Combine(AppContext.BaseDirectory, "Skills", "StepDefinitions", "step-definition-mobile.skill.json"),
             "desktop" => Path.Combine(AppContext.BaseDirectory, "Skills", "StepDefinitions", "step-definition-desktop.skill.json"),
             _ => throw new ArgumentException($"Unsupported platform: {platform}")

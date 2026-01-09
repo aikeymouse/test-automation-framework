@@ -65,6 +65,7 @@ class Program
             builder.Services.AddSingleton<LlmProviderFactory>();
             
             // Register Skills services
+            builder.Services.AddSingleton<SkillMarkdownParser>();
             builder.Services.AddSingleton<SkillLoader>();
             builder.Services.AddSingleton<SkillValidator>();
             builder.Services.AddSingleton<PromptBuilder>();
