@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+</head>
+<body>
+    <header>
+        <nav id="mainNav">
+            <a href="/dashboard" id="dashboardLink">Dashboard</a>
+            <a href="/profile" id="profileLink">Profile</a>
+            <a href="/settings" id="settingsLink">Settings</a>
+            <a href="/logout" id="logoutLink">Logout</a>
+        </nav>
+    </header>
+    
+    <main id="dashboardContent">
+        <h1 id="pageTitle">Dashboard</h1>
+        <div id="welcomeMessage" class="welcome-banner">
+            Welcome back, User!
+        </div>
+        
+        <section id="statsSection" class="dashboard-stats">
+            <div class="stat-card" id="ordersCard">
+                <h3>Total Orders</h3>
+                <span class="stat-value" id="ordersCount">42</span>
+            </div>
+            <div class="stat-card" id="revenueCard">
+                <h3>Revenue</h3>
+                <span class="stat-value" id="revenueAmount">$12,345</span>
+            </div>
+            <div class="stat-card" id="customersCard">
+                <h3>Customers</h3>
+                <span class="stat-value" id="customersCount">156</span>
+            </div>
+        </section>
+        
+        <section id="recentActivity" class="recent-activity">
+            <h2>Recent Activity</h2>
+            <ul id="activityList">
+                <li class="activity-item">Order #1234 completed</li>
+                <li class="activity-item">New customer registered</li>
+                <li class="activity-item">Payment received</li>
+            </ul>
+        </section>
+    </main>
+</body>
+</html>
