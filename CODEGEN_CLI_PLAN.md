@@ -1133,9 +1133,65 @@ See `docs/architecture/` for:
 - Skill loading sequence
 - Code generation pipeline
 
+## Appendix C: Future Improvements
+
+### MCP-Compatible Skills Format
+
+**Current State:** Skills use JSON format with Liquid templates for code generation.
+
+**Industry Standard:** Anthropic's Model Context Protocol (MCP) defines a skill format that has become a de facto standard by end of 2025:
+
+```
+my-skill/
+├── SKILL.md          # YAML frontmatter + Markdown instructions
+├── scripts/          # Executable code (Python, Bash, etc.)
+├── references/       # Reference materials (error codes, guides)
+└── assets/           # Templates, documents
+```
+
+**Example SKILL.md:**
+```markdown
+---
+name: production-incident-triage
+description: Use this skill for P0/P1 alerts for initial diagnosis and communication.
+---
+
+# Incident Triage Procedure
+## 1. Context Collection
+First, collect metrics for the last 15 minutes.
+Use the tool query_grafana with the main-cluster-v2 dashboard.
+
+## 2. Severity Check
+IF error_rate > 5% OR latency p99 > 2s:
+- Declare an incident using create_jira_ticket
+- Use template from assets/incident-template.md
+```
+
+**Recommendation:**
+- **Keep current JSON format** for simple code generation use cases
+- **Add MCP format support** when expanding to agent-like capabilities:
+  - Multi-step test generation workflows
+  - Test analysis and improvement suggestions
+  - Automated refactoring
+  - Integration with external tools (Jira, GitHub, CI/CD)
+
+**Benefits of MCP Format:**
+- Industry standard with community support
+- Human-readable Markdown instructions
+- Supports executable scripts and workflows
+- Better for complex, multi-step agent tasks
+- Easier for non-developers to contribute skills
+
+**Implementation Plan:**
+1. Create `SkillFormatAdapter` to support both formats
+2. Add MCP skill loader alongside current JSON loader
+3. Update documentation with MCP examples
+4. Maintain backward compatibility with existing JSON skills
+
 ---
 
 **Document Version:** 1.0  
 **Created:** 2026-01-08  
 **Last Updated:** 2026-01-08  
 **Author:** AIKeyMouse Team
+
