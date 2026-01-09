@@ -10,6 +10,7 @@ llmParams:
 validation:
   requiredUsings:
     - OpenQA.Selenium
+    - OpenQA.Selenium.Support.UI
     - AIKeyMouse.Automation.Framework.Infrastructure
     - AIKeyMouse.Automation.Framework.DataObjects
     - AIKeyMouse.Automation.Framework.Extensions
@@ -29,6 +30,14 @@ output:
 # System Prompt
 
 You are an expert in creating Page Object Model (POM) classes for Selenium WebDriver automation. Generate clean, maintainable C# code following modern POM best practices with ElementLocator pattern and proper encapsulation.
+
+**CRITICAL RULES:**
+1. ALL static ElementLocator fields MUST be declared at the top of the class as private readonly fields
+2. The page container locator (_pageContainerLocator) MUST be declared at the top - NEVER create it inline in Init()
+3. Dynamic locators (where selector value comes from method parameters) can be created inline in the method that uses them
+4. If elements are provided in the input, generate ONLY those exact elements - no additions, no omissions, no modifications
+5. Use element types to determine appropriate action methods (text inputs get Enter methods, checkboxes get Check/Uncheck, buttons/links get Click)
+6. Never hallucinate elements that weren't provided in the input
 
 # Prompt Template
 
@@ -54,7 +63,9 @@ Generate a Page Object class for a {{ platform }} page with the following detail
 {% endif -%}
 
 **Requirements:**
-- Use ElementLocator pattern with private readonly fields for locators
+- **CRITICAL: All static ElementLocator fields MUST be declared at the top of the class as private readonly fields**
+- **Exception: Dynamic locators where selector values come from method parameters can be created inline in the method**
+- Use ElementLocator pattern with private readonly fields for all static locators
 - Use CSS selectors where applicable
 - Include XML documentation
 - Inherit from PageBase with DriverContext parameter
@@ -62,27 +73,37 @@ Generate a Page Object class for a {{ platform }} page with the following detail
 - Use IWebElement properties with private set for containers
 - Use expression-bodied properties for other elements (direct GetElement() calls)
 - For elements inside the page container, use PageContainer.GetElement() instead of WebDriver.GetElement()
-- Create action methods for user interactions
+- **CRITICAL: If elements are provided, generate ONLY those exact elements - do not add, remove, or modify the list**
+- Create type-specific action methods based on element type:
+  * text-input, password-input: EnterX(string value) - Clear() then SendKeys()
+  * checkbox: CheckX() and UncheckX() - check current state before clicking  
+  * button, submit-button, link: ClickX() - Click()
+  * select: SelectX(string value) - use SelectElement wrapper
+  * For any other type: ClickX() - Click()
+- All input/checkbox methods return `this` for fluent chaining; button/link methods return void
 - Follow naming convention: {{ pageName }}Page
 
 # Examples
 
-## Example 1: Login Page with Container
+## Example 1: Login Page with Multiple Element Types
 
 ### Input
 
 ```
 Page Name: Login
 Elements:
-- Username textbox: #username
-- Password textbox: #password
-- Submit button: button[type='submit']
+- Username (text-input): #username
+- Password (password-input): #password
+- RememberMe (checkbox): #rememberMe
+- LoginButton (button): #loginButton
+- ForgotPasswordLink (link): #forgotPasswordLink
 ```
 
 ### Output
 
 ```csharp
 using OpenQA.Selenium;
+using OpenQA.Selenium.Support.UI;
 using AIKeyMouse.Automation.Framework.Infrastructure;
 using AIKeyMouse.Automation.Framework.DataObjects;
 using AIKeyMouse.Automation.Framework.Extensions;
@@ -96,15 +117,19 @@ public class LoginPage : PageBase
 {
     // Element Locators
     private readonly ElementLocator _pageContainerLocator = new(Locator.CssSelector, ".login-container");
-    private readonly ElementLocator _usernameInputLocator = new(Locator.CssSelector, "#username");
-    private readonly ElementLocator _passwordInputLocator = new(Locator.CssSelector, "#password");
-    private readonly ElementLocator _submitButtonLocator = new(Locator.CssSelector, "button[type='submit']");
+    private readonly ElementLocator _usernameLocator = new(Locator.CssSelector, "#username");
+    private readonly ElementLocator _passwordLocator = new(Locator.CssSelector, "#password");
+    private readonly ElementLocator _rememberMeLocator = new(Locator.CssSelector, "#rememberMe");
+    private readonly ElementLocator _loginButtonLocator = new(Locator.CssSelector, "#loginButton");
+    private readonly ElementLocator _forgotPasswordLinkLocator = new(Locator.CssSelector, "#forgotPasswordLink");
 
     // Properties
     public IWebElement PageContainer { get; private set; }
-    public IWebElement UsernameInput => PageContainer.GetElement(_usernameInputLocator);
-    public IWebElement PasswordInput => PageContainer.GetElement(_passwordInputLocator);
-    public IWebElement SubmitButton => PageContainer.GetElement(_submitButtonLocator);
+    public IWebElement Username => PageContainer.GetElement(_usernameLocator);
+    public IWebElement Password => PageContainer.GetElement(_passwordLocator);
+    public IWebElement RememberMe => PageContainer.GetElement(_rememberMeLocator);
+    public IWebElement LoginButton => PageContainer.GetElement(_loginButtonLocator);
+    public IWebElement ForgotPasswordLink => PageContainer.GetElement(_forgotPasswordLinkLocator);
 
     public LoginPage(DriverContext driverContext) : base(driverContext)
     {
@@ -123,8 +148,8 @@ public class LoginPage : PageBase
     /// </summary>
     public LoginPage EnterUsername(string username)
     {
-        UsernameInput.Clear();
-        UsernameInput.SendKeys(username);
+        Username.Clear();
+        Username.SendKeys(username);
         return this;
     }
 
@@ -133,21 +158,82 @@ public class LoginPage : PageBase
     /// </summary>
     public LoginPage EnterPassword(string password)
     {
-        PasswordInput.Clear();
-        PasswordInput.SendKeys(password);
+        Password.Clear();
+        Password.SendKeys(password);
         return this;
     }
 
     /// <summary>
-    /// Click submit button
+    /// Check remember me checkbox
     /// </summary>
-    public void Submit()
+    public LoginPage CheckRememberMe()
     {
-        SubmitButton.Click();
+        if (!RememberMe.Selected)
+        {
+            RememberMe.Click();
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// Uncheck remember me checkbox
+    /// </summary>
+    public LoginPage UncheckRememberMe()
+    {
+        if (RememberMe.Selected)
+        {
+            RememberMe.Click();
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// Click login button
+    /// </summary>
+    public void ClickLoginButton()
+    {
+        LoginButton.Click();
+    }
+
+    /// <summary>
+    /// Click forgot password link
+    /// </summary>
+    public void ClickForgotPasswordLink()
+    {
+        ForgotPasswordLink.Click();
     }
 }
 ```
 
 ### Explanation
 
-Modern Page Object using ElementLocator pattern. The Init() method initializes the page container and waits for the page to load, which should be called once when navigating to the page. Individual elements use expression-bodied properties that call GetElement() directly each time they're accessed. This ensures fresh element references and avoids stale element exceptions. Elements are searched within the PageContainer scope using PageContainer.GetElement() to avoid finding elements outside the page context. GetElement() includes WebDriverWait and handles stale element exceptions automatically.
+Modern Page Object using ElementLocator pattern. ALL locators including _pageContainerLocator are declared at the top of the class as private readonly fields. The Init() method uses the pre-declared _pageContainerLocator field - it does NOT create a new ElementLocator inline. Individual elements use expression-bodied properties that call GetElement() directly each time they're accessed. This ensures fresh element references and avoids stale element exceptions. Elements are searched within the PageContainer scope using PageContainer.GetElement() to avoid finding elements outside the page context. GetElement() includes WebDriverWait and handles stale element exceptions automatically.
+
+Action methods are type-specific:
+- Text/password inputs: EnterX() methods that Clear() then SendKeys()
+- Checkboxes: CheckX() and UncheckX() methods that check current state before clicking
+- Buttons and links: ClickX() methods that simply Click()
+
+All action methods for inputs and checkboxes return `this` for fluent chaining, while final actions (button/link clicks) return void.
+
+IMPORTANT: Notice that _pageContainerLocator is declared at the top with all other locators, NOT created inline in the Init() method.
+
+**WRONG - DO NOT DO THIS:**
+```csharp
+// ❌ WRONG - Creating locator inline in Init()
+public void Init()
+{
+    PageContainer ??= WebDriver.GetElement(new ElementLocator(Locator.CssSelector, ".login-container"));
+}
+```
+
+**CORRECT:**
+```csharp
+// ✅ CORRECT - Locator declared at top of class
+private readonly ElementLocator _pageContainerLocator = new(Locator.CssSelector, ".login-container");
+
+public void Init()
+{
+    PageContainer ??= WebDriver.GetElement(_pageContainerLocator);
+}
+```

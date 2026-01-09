@@ -87,7 +87,19 @@ public class HtmlParser
                 var type = input.GetAttributeValue("type", "text");
                 if (type == "hidden") continue; // Skip hidden fields
 
-                elements.Add(CreateElement(input, "input"));
+                // Use specific type for better code generation
+                var elementType = type switch
+                {
+                    "text" => "text-input",
+                    "password" => "password-input",
+                    "checkbox" => "checkbox",
+                    "radio" => "radio",
+                    "submit" => "submit-button",
+                    "button" => "button",
+                    _ => "input"
+                };
+
+                elements.Add(CreateElement(input, elementType));
             }
         }
 
@@ -128,6 +140,19 @@ public class HtmlParser
             foreach (var select in selects)
             {
                 elements.Add(CreateElement(select, "select"));
+            }
+        }
+
+        // Links
+        var links = doc.DocumentNode.SelectNodes("//a[@href]");
+        if (links != null)
+        {
+            foreach (var link in links)
+            {
+                var href = link.GetAttributeValue("href", "");
+                if (string.IsNullOrWhiteSpace(href) || href.StartsWith("#")) continue;
+
+                elements.Add(CreateElement(link, "link"));
             }
         }
 
