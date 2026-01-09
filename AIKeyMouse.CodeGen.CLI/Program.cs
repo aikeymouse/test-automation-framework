@@ -4,6 +4,7 @@ using AIKeyMouse.CodeGen.CLI.Models.LLM;
 using AIKeyMouse.CodeGen.CLI.Services.Infrastructure;
 using AIKeyMouse.CodeGen.CLI.Services.LLM;
 using AIKeyMouse.CodeGen.CLI.Services.Skills;
+using AIKeyMouse.CodeGen.CLI.Services.Parsers;
 using Polly;
 using Polly.Extensions.Http;
 
@@ -60,6 +61,10 @@ class Program
             builder.Services.AddSingleton<SkillLoader>();
             builder.Services.AddSingleton<SkillValidator>();
             builder.Services.AddSingleton<PromptBuilder>();
+            
+            // Register Parsers
+            builder.Services.AddSingleton<GherkinParser>();
+            builder.Services.AddSingleton<HtmlParser>();
 
             var app = builder.Build();
 
