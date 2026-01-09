@@ -6,7 +6,7 @@ category: page-object
 platform: web
 llmParams:
   temperature: 0.3
-  maxTokens: 2000
+  maxTokens: 4000
 validation:
   requiredUsings:
     - OpenQA.Selenium
