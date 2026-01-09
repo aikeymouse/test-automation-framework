@@ -31,7 +31,8 @@ public class GherkinParser
 
         var content = await _fileService.ReadFileAsync(filePath);
         
-        var gherkinDocument = _gherkinParser.Parse(content);
+        using var reader = new StringReader(content);
+        var gherkinDocument = _gherkinParser.Parse(reader);
 
         if (gherkinDocument.Feature == null)
         {
