@@ -36,8 +36,8 @@ You are an expert in creating Page Object Model (POM) classes for Selenium WebDr
 2. The page container locator (_pageContainerLocator) MUST be declared at the top - NEVER create it inline in Init()
 3. Dynamic locators (where selector value comes from method parameters) can be created inline in the method that uses them
 4. If elements are provided in the input, generate ONLY those exact elements - no additions, no omissions, no modifications
-5. Use element types to determine appropriate action methods (text inputs get Enter methods, checkboxes get Check/Uncheck, buttons/links get Click)
-6. Never hallucinate elements that weren't provided in the input
+4. Use element types to determine appropriate action methods (text inputs get Enter methods, checkboxes get IsXChecked() method + ClickX() method, buttons/links get Click)
+5. Never hallucinate elements that weren't provided in the input
 
 # Prompt Template
 
@@ -76,11 +76,11 @@ Generate a Page Object class for a {{ platform }} page with the following detail
 - **CRITICAL: If elements are provided, generate ONLY those exact elements - do not add, remove, or modify the list**
 - Create type-specific action methods based on element type:
   * text-input, password-input: EnterX(string value) - Clear() then SendKeys()
-  * checkbox: CheckX() and UncheckX() - check current state before clicking  
+  * checkbox: bool IsXChecked() method returning element.Selected, and ClickX() method for toggling
   * button, submit-button, link: ClickX() - Click()
   * select: SelectX(string value) - use SelectElement wrapper
   * For any other type: ClickX() - Click()
-- All input/checkbox methods return `this` for fluent chaining; button/link methods return void
+- All input and checkbox methods return `this` for fluent chaining; button/link methods return void
 - Follow naming convention: {{ pageName }}Page
 
 # Examples
@@ -164,26 +164,16 @@ public class LoginPage : PageBase
     }
 
     /// <summary>
-    /// Check remember me checkbox
+    /// Check if remember me is selected
     /// </summary>
-    public LoginPage CheckRememberMe()
-    {
-        if (!RememberMe.Selected)
-        {
-            RememberMe.Click();
-        }
-        return this;
-    }
+    public bool IsRememberMeChecked() => RememberMe.Selected;
 
     /// <summary>
-    /// Uncheck remember me checkbox
+    /// Click remember me checkbox
     /// </summary>
-    public LoginPage UncheckRememberMe()
+    public LoginPage ClickRememberMe()
     {
-        if (RememberMe.Selected)
-        {
-            RememberMe.Click();
-        }
+        RememberMe.Click();
         return this;
     }
 
@@ -211,10 +201,10 @@ Modern Page Object using ElementLocator pattern. ALL locators including _pageCon
 
 Action methods are type-specific:
 - Text/password inputs: EnterX() methods that Clear() then SendKeys()
-- Checkboxes: CheckX() and UncheckX() methods that check current state before clicking
+- Checkboxes: IsXChecked() method returning element.Selected, and ClickX() method to toggle state
 - Buttons and links: ClickX() methods that simply Click()
 
-All action methods for inputs and checkboxes return `this` for fluent chaining, while final actions (button/link clicks) return void.
+Input and checkbox methods return `this` for fluent chaining. Button and link methods return void.
 
 IMPORTANT: Notice that _pageContainerLocator is declared at the top with all other locators, NOT created inline in the Init() method.
 
