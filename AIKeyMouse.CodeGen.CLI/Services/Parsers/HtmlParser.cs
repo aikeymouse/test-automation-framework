@@ -251,7 +251,7 @@ public class HtmlParser
             Id = id,
             Classes = classes,
             CssSelector = GenerateCssSelector(node),
-            XPath = node.XPath,
+            XPath = CleanXPath(node.XPath),
             Text = node.InnerText.Trim(),
             Placeholder = node.GetAttributeValue("placeholder", null)
         };
@@ -292,7 +292,26 @@ public class HtmlParser
             }
         }
 
-        return node.XPath;
+        return CleanXPath(node.XPath);
+    }
+
+    /// <summary>
+    /// Clean up XPath by removing duplicate html tags and normalizing
+    /// </summary>
+    private string CleanXPath(string xpath)
+    {
+        if (string.IsNullOrWhiteSpace(xpath))
+            return xpath;
+
+        // Fix duplicate /html[1]/html[1]/ pattern
+        // This happens when HtmlAgilityPack encounters malformed HTML with nested html tags
+        var cleaned = System.Text.RegularExpressions.Regex.Replace(
+            xpath, 
+            @"^(/html\[\d+\])+", 
+            "/html[1]"
+        );
+
+        return cleaned;
     }
 
     /// <summary>
@@ -370,7 +389,7 @@ public class HtmlParser
             
             if (containerNode != null)
             {
-                return (selector, "CssSelector", containerNode.XPath, containerNode.Name);
+                return (selector, "CssSelector", CleanXPath(containerNode.XPath), containerNode.Name);
             }
             
             // If node not found, return selector with body fallback
@@ -399,7 +418,7 @@ public class HtmlParser
             if (containerNode != null)
             {
                 _logger.LogDebug("Found main content container: {Selector}", sel);
-                return (sel, "CssSelector", containerNode.XPath, containerNode.Name);
+                return (sel, "CssSelector", CleanXPath(containerNode.XPath), containerNode.Name);
             }
         }
 
