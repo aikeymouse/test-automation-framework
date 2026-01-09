@@ -6,6 +6,231 @@ Create a standalone .NET CLI tool that generates Page Objects and Step Definitio
 
 ---
 
+## Step Definition Skill Update Plan
+
+### Overview
+Update the step definition skill to match the StepsBase pattern with inline page object instantiation, explicit page name detection patterns, parameter extraction from Gherkin steps, intelligent chaining vs void handling, and type-inferred data classes.
+
+### Implementation Steps
+
+#### 1. Update StepsCommand with Page Parsing and Namespace Handling
+
+**Changes to `Commands/StepsCommand.cs`:**
+- Add `-ns RootNamespace` option (defaults to `StepDefinitions`)
+- Add `-p PageName1,PageName2,...` option for comma-separated page names
+- Parse comma-separated page names into list
+- Search each page using `file_search` pattern `Pages/**/{PageName}Page.cs`
+- Parse found files extracting public methods using regex `public\s+([\w<>\[\],\s]+)\s+(\w+)\s*\(([^)]*)\)`
+  - Capture return type (supports generics like `List<T>`, `Task<IWebElement>`)
+  - Capture method name
+  - Capture parameters and parse into type+name pairs
+- Mark pages with `methodsFound: true/false` flag
+- Parse feature file extracting:
+  - Gherkin steps with parameters `{paramName}`
+  - Table structures from steps with `Table` parameters
+- Convert table columns to PascalCase for data classes
+- Pass to template context:
+  - `namespace`: string (from -ns or default)
+  - `pages`: array of `{name, methodsFound: bool, methods: [{returnType, name, parameters: [{type, name}]}]}`
+  - `featureSteps`: array of Gherkin step text
+  - `tableDataClasses`: array of `{className, properties: [{name, type}]}`
+
+#### 2. Rewrite Skill Template with Complete StepsBase Pattern
+
+**Changes to `Skills/StepDefinitions/step-definition-web.skill.md`:**
+- Update class structure:
+  - Inherit from `StepsBase`
+  - Constructor: `public {Name}Steps(FeatureContext featureContext, ScenarioContext scenarioContext) : base(featureContext, scenarioContext) {}`
+  - Add `[Binding]` attribute to class
+- Update namespace to `{Namespace}` from parameter
+- Update usings:
+  - `Reqnroll`
+  - `{RootNamespace}.Infrastructure`
+  - `{RootNamespace}.Pages`
+  - `FluentAssertions`
+- Use specific step attributes: `[Given(@"...")]`, `[When(@"...")]`, `[Then(@"...")]`
+- Use flexible regex patterns (without `^` or `$` anchors)
+- Structure:
+  1. Internal data classes at top (if tables exist)
+  2. `[Binding]` attribute
+  3. Step definition class inheriting from StepsBase
+  4. Constructor calling base
+  5. Step methods
+- Display in prompt:
+  - All available pages with their names
+  - Methods for each page (if found)
+  - "Methods not found - use inference" message for pages without files
+
+#### 3. Add Page Detection Patterns and Parameter Extraction
+
+**Prompt instructions to include in skill template:**
+
+**Page Detection Patterns:**
+- `"login"` → `LoginPage`
+- `"dashboard"` → `DashboardPage`
+- `"home"` → `HomePage`
+- `"profile"` → `ProfilePage`
+- `"settings"` → `SettingsPage`
+- General pattern: `"{word}"` → `{PascalCase}Page`
+
+**Parameter Extraction:**
+- Gherkin step: `"I enter {username} and {password}"` → Method: `EnterCredentials(string username, string password)`
+- Gherkin step: `"I select {option} from dropdown"` → Method: `SelectOption(string option)`
+- Capture parameters as method parameters with appropriate types
+
+**Inline Page Instantiation:**
+- Pattern: `var pageName = new PageName(_driverContext).Init();`
+- Example: `var loginPage = new LoginPage(_driverContext).Init();`
+- Multiple pages: Create multiple instances in same step when step text references multiple pages
+
+**Fluent Chaining:**
+- Use chaining when methods return page instance:
+  ```csharp
+  loginPage.EnterUsername(username)
+           .EnterPassword(password)
+           .ClickLoginButton();
+  ```
+- Break chain when:
+  - Void method encountered
+  - FluentAssertions called (must be statement, not chained)
+  - Different page object needed
+
+**Method Inference (when page files not found):**
+- `"I enter X"` → `EnterX(string value)`
+- `"I click X"` → `ClickX()`
+- `"I select X"` → `SelectX(string value)`
+- `"I should see X"` → `page.IsXDisplayed().Should().BeTrue();`
+- `"X should contain Y"` → `page.GetX().Should().Contain(y);`
+- `"X should be Y"` → `page.GetX().Should().Be(y);`
+
+**Void vs Return Handling:**
+- Use void return when:
+  - Page method returns void
+  - FluentAssertions called in step
+  - No chaining needed
+- Use return `this` or page instance when:
+  - Fluent chaining is applicable
+  - Method logically continues workflow
+
+#### 4. Add Table Handling with Type-Inferred PascalCase Data Classes
+
+**Table Detection and Parsing:**
+- Parse feature file for all steps with `Table` parameter
+- Extract unique table structures by comparing column names
+- Generate one internal data class per unique structure
+
+**Data Class Generation:**
+- Convert table column names to PascalCase properties
+- Infer property types:
+  - `int` for numeric values (all digits)
+  - `decimal` for decimal numbers (contains decimal point)
+  - `bool` for "true"/"false"/"yes"/"no" values
+  - `string` as default fallback
+- Name classes contextually from step text: `{Context}Data`
+  - Examples: `NetworkConditionsData`, `LoginCredentialsData`, `ProductDetailsData`
+- Place all internal data classes before step class definition
+- Structure:
+  ```csharp
+  internal class NetworkConditionsData
+  {
+      public int Latency { get; set; }
+      public int DownloadThroughput { get; set; }
+      public int UploadThroughput { get; set; }
+  }
+  ```
+
+**Usage in Steps:**
+- Pattern: `var data = table.CreateInstance<DataClassName>();`
+- Example:
+  ```csharp
+  [Given(@"I enable network emulation with the following parameters:")]
+  public void EnableNetworkEmulation(Table table)
+  {
+      var networkConditions = table.CreateInstance<NetworkConditionsData>();
+      var devToolsHelper = new DevToolsHelper(_driverContext);
+      devToolsHelper.SetNetworkConditions(networkConditions);
+  }
+  ```
+
+**PascalCase Column Mapping:**
+- Reqnroll's `CreateInstance<T>()` maps columns to properties by name
+- Ensure PascalCase conversion matches Reqnroll's expectations
+- Example: column "Latency" → property `Latency { get; set; }`
+
+### Example Generated Code Structure
+
+```csharp
+using Reqnroll;
+using MyProject.Infrastructure;
+using MyProject.Pages;
+using FluentAssertions;
+
+namespace MyProject.StepDefinitions;
+
+// Internal data classes (if tables exist)
+internal class LoginCredentialsData
+{
+    public string Username { get; set; }
+    public string Password { get; set; }
+}
+
+[Binding]
+public class LoginSteps : StepsBase
+{
+    public LoginSteps(FeatureContext featureContext, ScenarioContext scenarioContext) 
+        : base(featureContext, scenarioContext)
+    {
+    }
+
+    [Given(@"I am on the login page")]
+    public void GivenIAmOnTheLoginPage()
+    {
+        var loginPage = new LoginPage(_driverContext).Init();
+        loginPage.NavigateTo();
+    }
+
+    [When(@"I enter (.*) and (.*)")]
+    public void WhenIEnterCredentials(string username, string password)
+    {
+        var loginPage = new LoginPage(_driverContext).Init();
+        loginPage.EnterUsername(username)
+                 .EnterPassword(password)
+                 .ClickLoginButton();
+    }
+
+    [When(@"I login with the following credentials:")]
+    public void WhenILoginWithCredentials(Table table)
+    {
+        var credentials = table.CreateInstance<LoginCredentialsData>();
+        var loginPage = new LoginPage(_driverContext).Init();
+        loginPage.EnterUsername(credentials.Username)
+                 .EnterPassword(credentials.Password)
+                 .ClickLoginButton();
+    }
+
+    [Then(@"I should be on the dashboard")]
+    public void ThenIShouldBeOnDashboard()
+    {
+        var dashboardPage = new DashboardPage(_driverContext).Init();
+        dashboardPage.IsDisplayed().Should().BeTrue();
+    }
+}
+```
+
+### Testing Plan
+1. Create test feature file with:
+   - Simple steps with parameters
+   - Steps with tables
+   - Steps requiring multiple page objects
+   - Validation steps
+2. Generate LoginPage.cs using page command
+3. Run steps command with `-p LoginPage,DashboardPage`
+4. Verify generated code compiles
+5. Verify step definitions match Gherkin correctly
+6. Test with and without page object files (inference mode)
+
+---
+
 ## 1. Project Overview
 
 ### 1.1 Goals

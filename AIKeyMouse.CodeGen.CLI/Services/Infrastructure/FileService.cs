@@ -241,4 +241,63 @@ public class FileService
         var content = JsonSerializer.Serialize(data, options);
         await WriteFileAsync(path, content, createBackup);
     }
+
+    /// <summary>
+    /// Find files matching a glob pattern (e.g., "Pages/**/*Page.cs")
+    /// </summary>
+    public async Task<List<string>> FindFilesAsync(string pattern)
+    {
+        _logger.LogDebug("Searching for files matching: {Pattern}", pattern);
+        
+        // Parse the pattern to determine base directory and search pattern
+        var parts = pattern.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+        var baseDir = parts.Length > 0 ? parts[0] : ".";
+        var searchPattern = parts.Length > 1 ? string.Join(Path.DirectorySeparatorChar, parts.Skip(1)) : "*";
+        
+        var results = new List<string>();
+        
+        // Check if base directory exists
+        if (!Directory.Exists(baseDir))
+        {
+            _logger.LogDebug("Base directory not found: {BaseDir}\", baseDir);
+            return results;
+        }
+        
+        // Perform search
+        try
+        {
+            var allFiles = Directory.GetFiles(baseDir, "*.*", SearchOption.AllDirectories);
+            foreach (var file in allFiles)
+            {
+                var relativePath = Path.GetRelativePath(baseDir, file);
+                if (MatchesPattern(relativePath, searchPattern))
+                {
+                    results.Add(file);
+                }
+            }
+            
+            _logger.LogDebug("Found {Count} files matching pattern", results.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error searching for files with pattern: {Pattern}", pattern);
+        }
+        
+        return await Task.FromResult(results);
+    }
+    
+    private bool MatchesPattern(string path, string pattern)
+    {
+        // Simple pattern matching - supports ** for any subdirectory
+        var patternRegex = "^" + System.Text.RegularExpressions.Regex.Escape(pattern)
+            .Replace("\\*\\*", ".*")
+            .Replace("\\*", "[^/\\\\]*")
+            .Replace("\\?", ".")
+            + "$";
+            
+        return System.Text.RegularExpressions.Regex.IsMatch(
+            path.Replace('\\', '/'),
+            patternRegex.Replace('\\', '/'),
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    }
 }

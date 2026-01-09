@@ -45,10 +45,10 @@ public class StepsCommand : BaseCommand
     public async Task<int> ExecuteAsync(
         [Option('f', Description = "Feature file path")] string feature,
         [Option('o', Description = "Output directory")] string? output = null,
-        [Option("namespace", Description = "Custom namespace")] string? customNamespace = null,
+        [Option("ns", Description = "Root namespace (defaults to StepDefinitions)")] string? rootNamespace = null,
         [Option('s', Description = "Skill file path")] string? skillPath = null,
-        [Option('p', Description = "Platform (web, mobile, desktop)")] string platform = "web",
-        [Option("pages", Description = "Comma-separated page object names")] string? pages = null,
+        [Option('p', Description = "Comma-separated page object names")] string? pages = null,
+        [Option("platform", Description = "Platform (web, mobile, desktop)")] string platform = "web",
         [Option("scenario", Description = "Specific scenario name to generate")] string? scenarioName = null)
     {
         DisplayInfo($"Generating Step Definitions from: {feature}");
@@ -65,12 +65,16 @@ public class StepsCommand : BaseCommand
             // Load skill
             var skill = await LoadSkillAsync(skillPath, platform);
 
+            // Determine namespace
+            var namespaceToUse = rootNamespace ?? "StepDefinitions";
+            
             // Build context for prompt
             var context = new Dictionary<string, object>
             {
                 ["featureName"] = parsedFeature.Name,
                 ["platform"] = platform,
-                ["namespace"] = customNamespace ?? Config.CodeGeneration.DefaultNamespace ?? "StepDefinitions",
+                ["namespace"] = namespaceToUse,
+                ["rootNamespace"] = namespaceToUse,
                 ["gherkinSteps"] = _gherkinParser.GetStepsAsText(parsedFeature, scenarioName)
             };
 
@@ -79,22 +83,20 @@ public class StepsCommand : BaseCommand
                 context["scenario"] = scenarioName;
             }
 
-            // Add page objects if provided
-            if (!string.IsNullOrWhiteSpace(pages))
+            // Parse and add page objects with methods
+            var pageObjects = await ParsePageObjectsAsync(pages, parsedFeature);
+            if (pageObjects.Count > 0)
             {
-                context["pageObjects"] = pages.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(p => p.Trim())
-                    .ToList();
+                context["pages"] = pageObjects;
+                DisplayInfo($"  Page objects: {string.Join(", ", pageObjects.Select(p => p["name"]))}");
             }
-            else
+            
+            // Parse feature for table structures
+            var tableDataClasses = ParseTableStructures(parsedFeature, scenarioName);
+            if (tableDataClasses.Count > 0)
             {
-                // Try to extract from feature
-                var extractedPages = _gherkinParser.ExtractPageObjectNames(parsedFeature);
-                if (extractedPages.Count > 0)
-                {
-                    context["pageObjects"] = extractedPages;
-                    DisplayInfo($"  Detected page objects: {string.Join(", ", extractedPages)}");
-                }
+                context["tableDataClasses"] = tableDataClasses;
+                DisplayInfo($"  Data classes: {tableDataClasses.Count}");
             }
 
             // Build prompt
@@ -199,5 +201,160 @@ public class StepsCommand : BaseCommand
 
         DisplayInfo($"Using built-in {platform} step definition skill");
         return await _skillLoader.LoadSkillAsync(builtInSkillPath);
+    }
+
+    private async Task<List<Dictionary<string, object>>> ParsePageObjectsAsync(string? pageNames, Models.Parsing.ParsedFeature feature)
+    {
+        var result = new List<Dictionary<string, object>>();
+        
+        // Get page names from parameter or extract from feature
+        var pages = new List<string>();
+        if (!string.IsNullOrWhiteSpace(pageNames))
+        {
+            pages = pageNames.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .ToList();
+        }
+        else
+        {
+            pages = _gherkinParser.ExtractPageObjectNames(feature);
+        }
+
+        foreach (var pageName in pages)
+        {
+            var pageInfo = new Dictionary<string, object>
+            {
+                ["name"] = pageName,
+                ["methodsFound"] = false,
+                ["methods"] = new List<Dictionary<string, object>>()
+            };
+
+            // Try to find page object file
+            var pageFiles = await FileService.FindFilesAsync($"Pages/**/{pageName}Page.cs");
+            if (pageFiles.Any())
+            {
+                var pageFile = pageFiles.First();
+                DisplayInfo($"  Found page file: {pageFile}");
+                
+                var methods = await ParsePageMethodsAsync(pageFile);
+                if (methods.Count > 0)
+                {
+                    pageInfo["methodsFound"] = true;
+                    pageInfo["methods"] = methods;
+                    DisplayInfo($"    Extracted {methods.Count} methods");
+                }
+            }
+            else
+            {
+                DisplayInfo($"  Page file not found for {pageName}, will use method inference");
+            }
+
+            result.Add(pageInfo);
+        }
+
+        return result;
+    }
+
+    private async Task<List<Dictionary<string, object>>> ParsePageMethodsAsync(string filePath)
+    {
+        var methods = new List<Dictionary<string, object>>();
+        var content = await FileService.ReadFileAsync(filePath);
+        
+        // Regex to match public methods with return types, names, and parameters
+        // Supports generics like List<T>, Task<IWebElement>, etc.
+        var methodPattern = @"public\s+([\w<>\[\],\s]+)\s+(\w+)\s*\(([^)]*)\)";
+        var matches = System.Text.RegularExpressions.Regex.Matches(content, methodPattern);
+
+        foreach (System.Text.RegularExpressions.Match match in matches)
+        {
+            var returnType = match.Groups[1].Value.Trim();
+            var methodName = match.Groups[2].Value.Trim();
+            var parametersStr = match.Groups[3].Value.Trim();
+
+            var parameters = new List<Dictionary<string, string>>();
+            if (!string.IsNullOrWhiteSpace(parametersStr))
+            {
+                var paramParts = parametersStr.Split(',');
+                foreach (var param in paramParts)
+                {
+                    var parts = param.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2)
+                    {
+                        parameters.Add(new Dictionary<string, string>
+                        {
+                            ["type"] = string.Join(" ", parts.Take(parts.Length - 1)),
+                            ["name"] = parts.Last()
+                        });
+                    }
+                }
+            }
+
+            methods.Add(new Dictionary<string, object>
+            {
+                ["returnType"] = returnType,
+                ["name"] = methodName,
+                ["parameters"] = parameters
+            });
+        }
+
+        return methods;
+    }
+
+    private List<Dictionary<string, object>> ParseTableStructures(Models.Parsing.ParsedFeature feature, string? scenarioName)
+    {
+        var dataClasses = new List<Dictionary<string, object>>();
+        var processedStructures = new HashSet<string>();
+
+        var scenariosToProcess = string.IsNullOrWhiteSpace(scenarioName)
+            ? feature.Scenarios
+            : feature.Scenarios.Where(s => s.Name == scenarioName).ToList();
+
+        foreach (var scenario in scenariosToProcess)
+        {
+            foreach (var step in scenario.Steps)
+            {
+                // Check if step text indicates a table (ends with colon)
+                if (step.Text.TrimEnd().EndsWith(":"))
+                {
+                    // Extract table columns - this would need actual table data from Gherkin parser
+                    // For now, we'll create a placeholder
+                    var className = GenerateDataClassName(step.Text);
+                    var structureKey = className;
+
+                    if (!processedStructures.Contains(structureKey))
+                    {
+                        // In a real implementation, we'd parse actual table columns here
+                        // For now, create a placeholder structure
+                        dataClasses.Add(new Dictionary<string, object>
+                        {
+                            ["className"] = className,
+                            ["properties"] = new List<Dictionary<string, string>>()
+                        });
+                        processedStructures.Add(structureKey);
+                    }
+                }
+            }
+        }
+
+        return dataClasses;
+    }
+
+    private string GenerateDataClassName(string stepText)
+    {
+        // Remove common prefixes and convert to PascalCase
+        var cleaned = stepText
+            .Replace("Given ", "")
+            .Replace("When ", "")
+            .Replace("Then ", "")
+            .Replace("And ", "")
+            .Replace("But ", "")
+            .TrimEnd(':')
+            .Trim();
+
+        // Extract meaningful words and convert to PascalCase
+        var words = cleaned.Split(new[] { ' ', '_', '-' }, StringSplitOptions.RemoveEmptyEntries);
+        var className = string.Join("", words.Select(w => char.ToUpper(w[0]) + w.Substring(1).ToLower()));
+        
+        return className + "Data";
     }
 }
