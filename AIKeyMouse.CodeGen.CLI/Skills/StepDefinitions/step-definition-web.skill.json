@@ -1,0 +1,38 @@
+{
+  "id": "step-definition-web",
+  "name": "Web Step Definition Generator",
+  "description": "Generate Reqnroll step definition classes for web automation scenarios",
+  "category": "step-definition",
+  "platform": "web",
+  "systemPrompt": "You are an expert in creating Reqnroll/SpecFlow step definition classes. Generate clean, maintainable C# code that properly binds Gherkin steps to automation code using Page Objects.",
+  "promptTemplate": "Generate a step definition class for the following scenario:\n\n**Feature:** {{ featureName }}\n{% if scenario -%}\n**Scenario:** {{ scenario }}\n{% endif -%}\n**Namespace:** {{ namespace | default: 'StepDefinitions' }}\n\n**Gherkin Steps:**\n{{ gherkinSteps }}\n\n{% if pageObjects -%}\n**Available Page Objects:**\n{% for page in pageObjects -%}\n- {{ page }}\n{% endfor -%}\n{% endif -%}\n\n**Requirements:**\n- Use [Given], [When], [Then], [And] attributes\n- Include XML documentation for each step\n- Use dependency injection for Page Objects\n- Follow naming convention: {{ featureName }}Steps\n- Use ScenarioContext for sharing data between steps\n- Handle assertions properly in Then steps",
+  "examples": [
+    {
+      "input": "Feature: Login\nSteps:\nGiven I am on the login page\nWhen I enter username \"testuser\"\nAnd I enter password \"password123\"\nAnd I click the login button\nThen I should see the dashboard",
+      "output": "using Reqnroll;\nusing FluentAssertions;\nusing Pages;\n\nnamespace StepDefinitions;\n\n[Binding]\npublic class LoginSteps\n{\n    private readonly LoginPage _loginPage;\n    private readonly DashboardPage _dashboardPage;\n    private readonly ScenarioContext _scenarioContext;\n\n    public LoginSteps(LoginPage loginPage, DashboardPage dashboardPage, ScenarioContext scenarioContext)\n    {\n        _loginPage = loginPage;\n        _dashboardPage = dashboardPage;\n        _scenarioContext = scenarioContext;\n    }\n\n    /// <summary>\n    /// Navigate to login page\n    /// </summary>\n    [Given(@\"I am on the login page\")]\n    public void GivenIAmOnTheLoginPage()\n    {\n        _loginPage.NavigateTo();\n    }\n\n    /// <summary>\n    /// Enter username\n    /// </summary>\n    [When(@\"I enter username \"\"(.*)\"\"\")]\n    public void WhenIEnterUsername(string username)\n    {\n        _loginPage.EnterUsername(username);\n    }\n\n    /// <summary>\n    /// Enter password\n    /// </summary>\n    [When(@\"I enter password \"\"(.*)\"\"\")]\n    public void WhenIEnterPassword(string password)\n    {\n        _loginPage.EnterPassword(password);\n    }\n\n    /// <summary>\n    /// Click login button\n    /// </summary>\n    [When(@\"I click the login button\")]\n    public void WhenIClickTheLoginButton()\n    {\n        _loginPage.Submit();\n    }\n\n    /// <summary>\n    /// Verify dashboard is displayed\n    /// </summary>\n    [Then(@\"I should see the dashboard\")]\n    public void ThenIShouldSeeTheDashboard()\n    {\n        _dashboardPage.IsDisplayed().Should().BeTrue(\"Dashboard should be visible after login\");\n    }\n}",
+      "explanation": "Step definitions with DI, proper attributes, and FluentAssertions"
+    }
+  ],
+  "validation": {
+    "requiredUsings": [
+      "Reqnroll",
+      "FluentAssertions"
+    ],
+    "validateSyntax": true,
+    "autoFormat": true
+  },
+  "output": {
+    "defaultPath": "StepDefinitions",
+    "fileNamePattern": "{name}Steps.cs",
+    "defaultNamespace": "StepDefinitions",
+    "codeExtraction": {
+      "extractCodeBlocks": true,
+      "language": "csharp",
+      "stripMarkdown": true
+    }
+  },
+  "llmParams": {
+    "temperature": 0.3,
+    "maxTokens": 2500
+  }
+}

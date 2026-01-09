@@ -3,6 +3,7 @@ using AIKeyMouse.CodeGen.CLI.Models.Configuration;
 using AIKeyMouse.CodeGen.CLI.Models.LLM;
 using AIKeyMouse.CodeGen.CLI.Services.Infrastructure;
 using AIKeyMouse.CodeGen.CLI.Services.LLM;
+using AIKeyMouse.CodeGen.CLI.Services.Skills;
 using Polly;
 using Polly.Extensions.Http;
 
@@ -54,6 +55,11 @@ class Program
             builder.Services.AddSingleton<ILlmProvider, GroqProvider>();
             builder.Services.AddSingleton<ILlmProvider, HuggingFaceProvider>();
             builder.Services.AddSingleton<LlmProviderFactory>();
+            
+            // Register Skills services
+            builder.Services.AddSingleton<SkillLoader>();
+            builder.Services.AddSingleton<SkillValidator>();
+            builder.Services.AddSingleton<PromptBuilder>();
 
             var app = builder.Build();
 
