@@ -85,18 +85,21 @@ Generate a Page Object class for a {{ platform }} page with the following detail
 
 # Examples
 
-## Example 1: Login Page with Multiple Element Types
+## Example 1: Contact Form Page with Multiple Element Types
 
 ### Input
 
 ```
-Page Name: Login
+Page Name: ContactForm
 Elements:
-- Username (text-input): #username
-- Password (password-input): #password
-- RememberMe (checkbox): #rememberMe
-- LoginButton (button): #loginButton
-- ForgotPasswordLink (link): #forgotPasswordLink
+- FullName (text-input): #fullName
+- Email (text-input): #email
+- Subject (text-input): #subject
+- Message (textarea): #message
+- Subscribe (checkbox): #subscribe
+- Country (select): #country
+- SubmitButton (submit-button): #submitBtn
+- PrivacyPolicyLink (link): #privacyPolicy
 ```
 
 ### Output
@@ -111,27 +114,33 @@ using AIKeyMouse.Automation.Framework.Extensions;
 namespace Pages;
 
 /// <summary>
-/// Page Object for Login page
+/// Page Object for ContactForm page
 /// </summary>
-public class LoginPage : PageBase
+public class ContactFormPage : PageBase
 {
     // Element Locators
-    private readonly ElementLocator _pageContainerLocator = new(Locator.CssSelector, ".login-container");
-    private readonly ElementLocator _usernameLocator = new(Locator.CssSelector, "#username");
-    private readonly ElementLocator _passwordLocator = new(Locator.CssSelector, "#password");
-    private readonly ElementLocator _rememberMeLocator = new(Locator.CssSelector, "#rememberMe");
-    private readonly ElementLocator _loginButtonLocator = new(Locator.CssSelector, "#loginButton");
-    private readonly ElementLocator _forgotPasswordLinkLocator = new(Locator.CssSelector, "#forgotPasswordLink");
+    private readonly ElementLocator _pageContainerLocator = new(Locator.CssSelector, ".contact-form-container");
+    private readonly ElementLocator _fullNameLocator = new(Locator.CssSelector, "#fullName");
+    private readonly ElementLocator _emailLocator = new(Locator.CssSelector, "#email");
+    private readonly ElementLocator _subjectLocator = new(Locator.CssSelector, "#subject");
+    private readonly ElementLocator _messageLocator = new(Locator.CssSelector, "#message");
+    private readonly ElementLocator _subscribeLocator = new(Locator.CssSelector, "#subscribe");
+    private readonly ElementLocator _countryLocator = new(Locator.CssSelector, "#country");
+    private readonly ElementLocator _submitButtonLocator = new(Locator.CssSelector, "#submitBtn");
+    private readonly ElementLocator _privacyPolicyLinkLocator = new(Locator.CssSelector, "#privacyPolicy");
 
     // Properties
     public IWebElement PageContainer { get; private set; }
-    public IWebElement Username => PageContainer.GetElement(_usernameLocator);
-    public IWebElement Password => PageContainer.GetElement(_passwordLocator);
-    public IWebElement RememberMe => PageContainer.GetElement(_rememberMeLocator);
-    public IWebElement LoginButton => PageContainer.GetElement(_loginButtonLocator);
-    public IWebElement ForgotPasswordLink => PageContainer.GetElement(_forgotPasswordLinkLocator);
+    public IWebElement FullName => PageContainer.GetElement(_fullNameLocator);
+    public IWebElement Email => PageContainer.GetElement(_emailLocator);
+    public IWebElement Subject => PageContainer.GetElement(_subjectLocator);
+    public IWebElement Message => PageContainer.GetElement(_messageLocator);
+    public IWebElement Subscribe => PageContainer.GetElement(_subscribeLocator);
+    public IWebElement Country => PageContainer.GetElement(_countryLocator);
+    public IWebElement SubmitButton => PageContainer.GetElement(_submitButtonLocator);
+    public IWebElement PrivacyPolicyLink => PageContainer.GetElement(_privacyPolicyLinkLocator);
 
-    public LoginPage(DriverContext driverContext) : base(driverContext)
+    public ContactFormPage(DriverContext driverContext) : base(driverContext)
     {
     }
 
@@ -144,53 +153,83 @@ public class LoginPage : PageBase
     }
 
     /// <summary>
-    /// Enter username
+    /// Enter full name
     /// </summary>
-    public LoginPage EnterUsername(string username)
+    public ContactFormPage EnterFullName(string fullName)
     {
-        Username.Clear();
-        Username.SendKeys(username);
+        FullName.Clear();
+        FullName.SendKeys(fullName);
         return this;
     }
 
     /// <summary>
-    /// Enter password
+    /// Enter email
     /// </summary>
-    public LoginPage EnterPassword(string password)
+    public ContactFormPage EnterEmail(string email)
     {
-        Password.Clear();
-        Password.SendKeys(password);
+        Email.Clear();
+        Email.SendKeys(email);
         return this;
     }
 
     /// <summary>
-    /// Check if remember me is selected
+    /// Enter subject
     /// </summary>
-    public bool IsRememberMeChecked() => RememberMe.Selected;
-
-    /// <summary>
-    /// Click remember me checkbox
-    /// </summary>
-    public LoginPage ClickRememberMe()
+    public ContactFormPage EnterSubject(string subject)
     {
-        RememberMe.Click();
+        Subject.Clear();
+        Subject.SendKeys(subject);
         return this;
     }
 
     /// <summary>
-    /// Click login button
+    /// Enter message
     /// </summary>
-    public void ClickLoginButton()
+    public ContactFormPage EnterMessage(string message)
     {
-        LoginButton.Click();
+        Message.Clear();
+        Message.SendKeys(message);
+        return this;
     }
 
     /// <summary>
-    /// Click forgot password link
+    /// Check if subscribe is selected
     /// </summary>
-    public void ClickForgotPasswordLink()
+    public bool IsSubscribeChecked() => Subscribe.Selected;
+
+    /// <summary>
+    /// Click subscribe checkbox
+    /// </summary>
+    public ContactFormPage ClickSubscribe()
     {
-        ForgotPasswordLink.Click();
+        Subscribe.Click();
+        return this;
+    }
+
+    /// <summary>
+    /// Select country
+    /// </summary>
+    public ContactFormPage SelectCountry(string country)
+    {
+        var select = new SelectElement(Country);
+        select.SelectByText(country);
+        return this;
+    }
+
+    /// <summary>
+    /// Click submit button
+    /// </summary>
+    public void ClickSubmitButton()
+    {
+        SubmitButton.Click();
+    }
+
+    /// <summary>
+    /// Click privacy policy link
+    /// </summary>
+    public void ClickPrivacyPolicyLink()
+    {
+        PrivacyPolicyLink.Click();
     }
 }
 ```
