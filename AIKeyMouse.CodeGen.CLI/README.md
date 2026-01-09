@@ -117,7 +117,7 @@ dotnet aikeymouse-codegen page --name Login --output Pages/Auth --namespace MyAp
 dotnet aikeymouse-codegen page --name Login --platform mobile
 
 # Use custom skill file
-dotnet aikeymouse-codegen page --name Login --skill-path ./skills/custom-page.skill.json
+dotnet aikeymouse-codegen page --name Login --skill-path ./skills/custom-page.skill.md
 ```
 
 ### Generate Step Definitions
@@ -136,7 +136,38 @@ dotnet aikeymouse-codegen steps --feature Login.feature --pages LoginPage,Dashbo
 dotnet aikeymouse-codegen steps --feature Login.feature --scenario "Successful login"
 
 # Use custom skill
-dotnet aikeymouse-codegen steps --feature Login.feature --skill-path ./skills/custom-steps.skill.json
+dotnet aikeymouse-codegen steps --feature Login.feature --skill-path ./skills/custom-steps.skill.md
+```
+
+## Skills System
+
+Skills define how the CLI generates code using AI in Markdown format (`.skill.md`) with YAML frontmatter for easy editing and maintenance.
+
+### Built-in Skills
+
+**Web Platform:**
+- `page-object-web.skill.md` - Selenium Page Object with PageFactory pattern
+- `step-definition-web.skill.md` - Reqnroll step definitions with FluentAssertions
+
+### Creating Custom Skills
+
+See **[Skills/SKILL_FORMAT.md](Skills/SKILL_FORMAT.md)** for complete documentation on:
+- File format and structure
+- YAML frontmatter configuration
+- Liquid template syntax
+- Examples and best practices
+- Testing and troubleshooting
+
+**Quick start:**
+```bash
+# Copy the template
+cp Skills/template.skill.md Skills/YourCategory/my-skill.skill.md
+
+# Edit the skill file (see SKILL_FORMAT.md for details)
+
+# Test your skill
+dotnet build
+dotnet run -- page --name Test --skill-path Skills/YourCategory/my-skill.skill.md
 ```
 
 ## IDE Integration
@@ -190,6 +221,7 @@ Add to `.vscode/tasks.json`:
 **Built-in Skills:**
 - Web Page Object (Selenium with PageFactory pattern)
 - Web Step Definitions (Reqnroll with FluentAssertions)
+- **Markdown format** with YAML frontmatter for easy editing
 
 **Parsers:**
 - Gherkin feature files (scenarios, steps, tags)
@@ -210,9 +242,10 @@ Add to `.vscode/tasks.json`:
 - **Provider Detection:** Fast availability check (<150ms) with 30-second caching
 - **Logging:** Serilog with console/file sinks
 - **Configuration:** Microsoft.Extensions.Configuration (multi-source)
+- **Skills Format:** Markdown with YAML frontmatter (YamlDotNet)
 - **Parsing:** Gherkin, HtmlAgilityPack
 - **Code Generation:** Roslyn (Microsoft.CodeAnalysis.CSharp)
-- **Templating:** Fluid.Core
+- **Templating:** Fluid.Core (Liquid templates)
 - **Resilience:** Polly for HTTP retry/failover
 - **Distribution:** .NET Tool (requires .NET 8+ SDK)
 
@@ -241,6 +274,7 @@ AIKeyMouse.CodeGen.CLI/
 │   │   └── HtmlParser.cs
 │   └── Skills/           # Skills system
 │       ├── SkillLoader.cs
+│       ├── SkillMarkdownParser.cs
 │       ├── SkillValidator.cs
 │       └── PromptBuilder.cs
 ├── Models/               # Data models
@@ -249,10 +283,12 @@ AIKeyMouse.CodeGen.CLI/
 │   ├── Parsing/         # Parsed data structures
 │   └── Skills/          # Skill definitions
 ├── Skills/              # Built-in skill files
+│   ├── SKILL_FORMAT.md  # Complete skill format guide
+│   ├── template.skill.md # Template for creating new skills
 │   ├── PageObjects/
-│   │   └── page-object-web.skill.json
+│   │   └── page-object-web.skill.md
 │   └── StepDefinitions/
-│       └── step-definition-web.skill.json
+│       └── step-definition-web.skill.md
 └── Config/              # Configuration files
     └── appsettings.json
 ```
@@ -273,6 +309,8 @@ AIKeyMouse.CodeGen.CLI/
 ## Documentation
 
 - [Configuration Guide](CONFIGURATION.md) - Complete reference for all `appsettings.json` settings
+- [Skill Format Guide](Skills/SKILL_FORMAT.md) - How to create custom skills in Markdown format
+- [Skill Template](Skills/template.skill.md) - Ready-to-use template for new skills
 - [Implementation Plan](../CODEGEN_CLI_PLAN.md) - Complete implementation plan
 
 ## License
