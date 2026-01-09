@@ -50,58 +50,76 @@ export GROQ_API_KEY="gsk_your_api_key_here"
 export HUGGINGFACE_API_KEY="hf_your_api_key_here"
 ```
 
-### Project Configuration
+### Project Configuration (Optional)
 
-Initialize a project configuration:
+Create a project-specific configuration file `aikeymouse.config.json`:
 
-```bash
-dotnet aikeymouse-codegen config init
+```json
+{
+  "Llm": {
+    "Temperature": 0.3,
+    "MaxTokens": 2000
+  },
+  "CodeGeneration": {
+    "DefaultNamespace": "MyProject.Automation",
+    "DefaultPlatform": "web"
+  }
+}
 ```
 
-This creates `aikeymouse.config.json` in your project directory.
-
 ## Usage
+
+### Check Version
+
+```bash
+dotnet aikeymouse-codegen version
+```
+
+### Test LLM Integration
+
+```bash
+dotnet aikeymouse-codegen test-llm --prompt "Write a simple C# hello world method"
+```
 
 ### Generate Page Objects
 
 ```bash
-# From feature file
-dotnet aikeymouse-codegen page --feature Features/Login.feature
+# Basic page object generation
+dotnet aikeymouse-codegen page --name Login
 
-# From HTML page source
-dotnet aikeymouse-codegen page --html login.html --name LoginPage
+# Parse HTML from URL
+dotnet aikeymouse-codegen page --name Login --url https://example.com/login
 
-# With custom output directory
-dotnet aikeymouse-codegen page --feature Login.feature --output Pages/Authentication
+# Parse HTML from file
+dotnet aikeymouse-codegen page --name Login --html-file login.html
+
+# With custom output directory and namespace
+dotnet aikeymouse-codegen page --name Login --output Pages/Auth --namespace MyApp.Pages
+
+# Specify platform (web/mobile/desktop)
+dotnet aikeymouse-codegen page --name Login --platform mobile
+
+# Use custom skill file
+dotnet aikeymouse-codegen page --name Login --skill-path ./skills/custom-page.skill.json
 ```
 
 ### Generate Step Definitions
 
 ```bash
-# From feature file
+# Generate from feature file
 dotnet aikeymouse-codegen steps --feature Features/Login.feature
 
-# With explicit page references
+# With custom output and namespace
+dotnet aikeymouse-codegen steps --feature Login.feature --output Steps --namespace MyApp.Steps
+
+# With explicit page objects
 dotnet aikeymouse-codegen steps --feature Login.feature --pages LoginPage,DashboardPage
-```
 
-### Interactive Chat
+# Generate for specific scenario only
+dotnet aikeymouse-codegen steps --feature Login.feature --scenario "Successful login"
 
-```bash
-dotnet aikeymouse-codegen chat "Generate a page object for login with username, password fields and submit button"
-```
-
-### Manage Skills
-
-```bash
-# List available skills
-dotnet aikeymouse-codegen skill list
-
-# Create custom skill
-dotnet aikeymouse-codegen skill create --name "My Page Object" --category page-object
-
-# Validate skill
-dotnet aikeymouse-codegen skill validate --file ./skills/custom.skill.json
+# Use custom skill
+dotnet aikeymouse-codegen steps --feature Login.feature --skill-path ./skills/custom-steps.skill.json
 ```
 
 ## IDE Integration
@@ -136,16 +154,37 @@ Add to `.vscode/tasks.json`:
 
 ## Development Status
 
-This is currently in **Phase 1** implementation:
-- ✅ Project structure created
-- ✅ Configuration system implemented
-- ✅ Logging infrastructure set up
-- ✅ Base command framework ready
-- ✅ Cocona CLI framework integrated
-- ✅ .NET tool packaging configured
-- ⏳ LLM providers (Phase 2)
-- ⏳ Skills system (Phase 3)
-- ⏳ Code generation (Phase 5)
+### Completed Phases
+
+- ✅ **Phase 1:** Foundation - CLI framework, configuration, logging, file I/O
+- ✅ **Phase 2:** LLM Integration - Groq and HuggingFace providers with failover
+- ✅ **Phase 3:** Skills System - JSON/YAML skills with inheritance and templates
+- ✅ **Phase 4:** Parsers - Gherkin feature file and HTML page parsing
+- ✅ **Phase 5:** Code Generation - Page object and step definition commands
+
+### Current Capabilities
+
+**Working Commands:**
+- `version` - Display tool version
+- `test-llm` - Test LLM provider connectivity
+- `page` - Generate Page Object Model classes
+- `steps` - Generate Reqnroll step definitions
+
+**Built-in Skills:**
+- Web Page Object (Selenium with PageFactory pattern)
+- Web Step Definitions (Reqnroll with FluentAssertions)
+
+**Parsers:**
+- Gherkin feature files (scenarios, steps, tags)
+- HTML pages (elements, forms, CSS selectors, XPath)
+
+### Future Enhancements (Phase 6+)
+
+- Interactive chat command
+- Skill management commands (list, create, validate)
+- Config management command
+- Additional platform skills (mobile, desktop)
+- Enhanced element detection and grouping
 
 ## Technology Stack
 
@@ -163,13 +202,55 @@ This is currently in **Phase 1** implementation:
 
 ```
 AIKeyMouse.CodeGen.CLI/
-├── Commands/           # CLI command handlers
-├── Services/           # Core services (LLM, CodeGen, Parsers, Skills)
-├── Models/            # Data models
-├── Skills/            # Built-in skill definitions
-├── Templates/         # Code templates
-└── Config/            # Configuration files
+├── Commands/              # CLI command handlers
+│   ├── BaseCommand.cs     # Base class for all commands
+│   ├── PageCommand.cs     # Page object generation
+│   └── StepsCommand.cs    # Step definition generation
+├── Services/
+│   ├── CodeGeneration/    # Code generation and validation
+│   │   └── CodeGenerator.cs
+│   ├── Infrastructure/    # Core infrastructure
+│   │   ├── ConfigurationService.cs
+│   │   ├── FileService.cs
+│   │   └── LoggingService.cs
+│   ├── LLM/              # LLM provider integration
+│   │   ├── ILlmProvider.cs
+│   │   ├── GroqProvider.cs
+│   │   ├── HuggingFaceProvider.cs
+│   │   └── LlmProviderFactory.cs
+│   ├── Parsers/          # Input parsers
+│   │   ├── GherkinParser.cs
+│   │   └── HtmlParser.cs
+│   └── Skills/           # Skills system
+│       ├── SkillLoader.cs
+│       ├── SkillValidator.cs
+│       └── PromptBuilder.cs
+├── Models/               # Data models
+│   ├── Configuration/    # Configuration DTOs
+│   ├── LLM/             # LLM request/response
+│   ├── Parsing/         # Parsed data structures
+│   └── Skills/          # Skill definitions
+├── Skills/              # Built-in skill files
+│   ├── PageObjects/
+│   │   └── page-object-web.skill.json
+│   └── StepDefinitions/
+│       └── step-definition-web.skill.json
+└── Config/              # Configuration files
+    └── appsettings.json
 ```
+
+## How It Works
+
+1. **Command Execution**: User runs a command (e.g., `page --name Login`)
+2. **Skill Loading**: Loads appropriate skill (built-in or custom) with templates and examples
+3. **Input Parsing**: Parses HTML or feature files to extract elements/steps
+4. **Context Building**: Combines skill template with parsed data
+5. **Prompt Generation**: Renders Liquid template to create LLM prompt
+6. **LLM Call**: Sends request to LLM provider (with automatic failover)
+7. **Code Extraction**: Extracts generated code from LLM response
+8. **Validation**: Validates syntax using Roslyn compiler
+9. **Formatting**: Formats code with Roslyn formatter
+10. **Output**: Writes to file with backup of existing code
 
 ## Documentation
 
