@@ -10,8 +10,9 @@ llmParams:
 validation:
   requiredUsings:
     - OpenQA.Selenium
-    - SeleniumExtras.PageObjects
     - AIKeyMouse.Automation.Framework.Infrastructure
+    - AIKeyMouse.Automation.Framework.DataObjects
+    - AIKeyMouse.Automation.Framework.Extensions
   requiredBaseClass: PageBase
   validateSyntax: true
   autoFormat: true
@@ -27,7 +28,7 @@ output:
 
 # System Prompt
 
-You are an expert in creating Page Object Model (POM) classes for Selenium WebDriver automation. Generate clean, maintainable C# code following POM best practices with proper encapsulation and reusable methods.
+You are an expert in creating Page Object Model (POM) classes for Selenium WebDriver automation. Generate clean, maintainable C# code following modern POM best practices with ElementLocator pattern and proper encapsulation.
 
 # Prompt Template
 
@@ -53,16 +54,20 @@ Generate a Page Object class for a {{ platform }} page with the following detail
 {% endif -%}
 
 **Requirements:**
+- Use ElementLocator pattern with private readonly fields for locators
 - Use CSS selectors where applicable
 - Include XML documentation
-- Inherit from PageBase
-- Use IWebElement properties with [FindsBy] attributes
+- Inherit from PageBase with DriverContext parameter
+- Create Init() method for page-level initialization (container element, wait for page load)
+- Use IWebElement properties with private set for containers
+- Use expression-bodied properties for other elements (direct GetElement() calls)
+- For elements inside the page container, use PageContainer.GetElement() instead of WebDriver.GetElement()
 - Create action methods for user interactions
 - Follow naming convention: {{ pageName }}Page
 
 # Examples
 
-## Example 1
+## Example 1: Login Page with Container
 
 ### Input
 
@@ -78,8 +83,9 @@ Elements:
 
 ```csharp
 using OpenQA.Selenium;
-using SeleniumExtras.PageObjects;
 using AIKeyMouse.Automation.Framework.Infrastructure;
+using AIKeyMouse.Automation.Framework.DataObjects;
+using AIKeyMouse.Automation.Framework.Extensions;
 
 namespace Pages;
 
@@ -88,18 +94,28 @@ namespace Pages;
 /// </summary>
 public class LoginPage : PageBase
 {
-    [FindsBy(How = How.CssSelector, Using = "#username")]
-    private IWebElement UsernameInput { get; set; }
+    // Element Locators
+    private readonly ElementLocator _pageContainerLocator = new(Locator.CssSelector, ".login-container");
+    private readonly ElementLocator _usernameInputLocator = new(Locator.CssSelector, "#username");
+    private readonly ElementLocator _passwordInputLocator = new(Locator.CssSelector, "#password");
+    private readonly ElementLocator _submitButtonLocator = new(Locator.CssSelector, "button[type='submit']");
 
-    [FindsBy(How = How.CssSelector, Using = "#password")]
-    private IWebElement PasswordInput { get; set; }
+    // Properties
+    public IWebElement PageContainer { get; private set; }
+    public IWebElement UsernameInput => PageContainer.GetElement(_usernameInputLocator);
+    public IWebElement PasswordInput => PageContainer.GetElement(_passwordInputLocator);
+    public IWebElement SubmitButton => PageContainer.GetElement(_submitButtonLocator);
 
-    [FindsBy(How = How.CssSelector, Using = "button[type='submit']")]
-    private IWebElement SubmitButton { get; set; }
-
-    public LoginPage(IWebDriver driver) : base(driver)
+    public LoginPage(DriverContext driverContext) : base(driverContext)
     {
-        PageFactory.InitElements(driver, this);
+    }
+
+    /// <summary>
+    /// Initialize page and wait for container to load
+    /// </summary>
+    public void Init()
+    {
+        PageContainer ??= WebDriver.GetElement(_pageContainerLocator);
     }
 
     /// <summary>
@@ -107,6 +123,7 @@ public class LoginPage : PageBase
     /// </summary>
     public LoginPage EnterUsername(string username)
     {
+        UsernameInput.Clear();
         UsernameInput.SendKeys(username);
         return this;
     }
@@ -116,6 +133,7 @@ public class LoginPage : PageBase
     /// </summary>
     public LoginPage EnterPassword(string password)
     {
+        PasswordInput.Clear();
         PasswordInput.SendKeys(password);
         return this;
     }
@@ -127,19 +145,9 @@ public class LoginPage : PageBase
     {
         SubmitButton.Click();
     }
-
-    /// <summary>
-    /// Complete login action
-    /// </summary>
-    public void Login(string username, string password)
-    {
-        EnterUsername(username);
-        EnterPassword(password);
-        Submit();
-    }
 }
 ```
 
 ### Explanation
 
-Page Object with fluent interface, proper encapsulation, and reusable methods
+Modern Page Object using ElementLocator pattern. The Init() method initializes the page container and waits for the page to load, which should be called once when navigating to the page. Individual elements use expression-bodied properties that call GetElement() directly each time they're accessed. This ensures fresh element references and avoids stale element exceptions. Elements are searched within the PageContainer scope using PageContainer.GetElement() to avoid finding elements outside the page context. GetElement() includes WebDriverWait and handles stale element exceptions automatically.
