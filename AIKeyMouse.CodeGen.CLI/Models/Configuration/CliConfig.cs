@@ -144,6 +144,11 @@ public class OllamaConfig
     public string FallbackModel { get; set; } = "mistral:7b";
 
     /// <summary>
+    /// Request timeout in seconds for generation
+    /// </summary>
+    public int TimeoutSeconds { get; set; } = 180; // 3 minutes
+
+    /// <summary>
     /// Provider priority (lower = higher priority)
     /// </summary>
     public int Priority { get; set; } = 0; // Highest priority - local is fastest and free

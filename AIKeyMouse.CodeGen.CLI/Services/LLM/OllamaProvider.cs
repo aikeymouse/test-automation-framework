@@ -86,8 +86,8 @@ public class OllamaProvider : ILlmProvider
         
         _logger.LogDebug("Sending request to Ollama with model {Model}", model);
 
-        // Restore normal timeout for actual generation
-        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        // Use configured timeout for code generation
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(_config.TimeoutSeconds));
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
 
         // Build prompt with context
