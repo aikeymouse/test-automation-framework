@@ -259,7 +259,7 @@ public class FileService
         // Check if base directory exists
         if (!Directory.Exists(baseDir))
         {
-            _logger.LogDebug("Base directory not found: {BaseDir}\", baseDir);
+            _logger.LogDebug("Base directory not found: {BaseDir}", baseDir);
             return results;
         }
         
