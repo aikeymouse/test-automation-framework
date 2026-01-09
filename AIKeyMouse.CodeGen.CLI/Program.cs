@@ -44,17 +44,22 @@ class Program
             // Register LLM configuration
             var cliConfig = new CliConfig();
             configuration.Bind(cliConfig);
+            builder.Services.AddSingleton(cliConfig.Llm.Ollama);
             builder.Services.AddSingleton(cliConfig.Llm.Groq);
             builder.Services.AddSingleton(cliConfig.Llm.HuggingFace);
             
             // Register HTTP clients with Polly retry policies
+            builder.Services.AddHttpClient<OllamaProvider>()
+                .AddPolicyHandler(GetRetryPolicy());
+            
             builder.Services.AddHttpClient<GroqProvider>()
                 .AddPolicyHandler(GetRetryPolicy());
                 
             builder.Services.AddHttpClient<HuggingFaceProvider>()
                 .AddPolicyHandler(GetRetryPolicy());
             
-            // Register LLM providers
+            // Register LLM providers (in priority order: Ollama -> Groq -> HuggingFace)
+            builder.Services.AddSingleton<ILlmProvider, OllamaProvider>();
             builder.Services.AddSingleton<ILlmProvider, GroqProvider>();
             builder.Services.AddSingleton<ILlmProvider, HuggingFaceProvider>();
             builder.Services.AddSingleton<LlmProviderFactory>();

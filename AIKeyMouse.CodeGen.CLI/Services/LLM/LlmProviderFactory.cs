@@ -30,8 +30,8 @@ public class LlmProviderFactory
         if (provider == null)
         {
             throw new InvalidOperationException(
-                "No LLM providers are configured. " +
-                "Set GROQ_API_KEY or HUGGINGFACE_API_KEY environment variable.");
+                "No LLM providers are available. " +
+                "Start Ollama locally, or set GROQ_API_KEY or HUGGINGFACE_API_KEY environment variable.");
         }
 
         return provider;
@@ -49,8 +49,8 @@ public class LlmProviderFactory
         if (availableProviders.Count == 0)
         {
             throw new InvalidOperationException(
-                "No LLM providers are configured. " +
-                "Set GROQ_API_KEY or HUGGINGFACE_API_KEY environment variable.");
+                "No LLM providers are available. " +
+                "Start Ollama locally, or set GROQ_API_KEY or HUGGINGFACE_API_KEY environment variable.");
         }
 
         Exception? lastException = null;

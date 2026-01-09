@@ -108,6 +108,11 @@ public class LlmConfiguration
     public int RetryAttempts { get; set; } = 3;
 
     /// <summary>
+    /// Ollama provider configuration
+    /// </summary>
+    public OllamaConfig Ollama { get; set; } = new();
+
+    /// <summary>
     /// Groq provider configuration
     /// </summary>
     public GroqConfig Groq { get; set; } = new();
@@ -116,6 +121,32 @@ public class LlmConfiguration
     /// HuggingFace provider configuration
     /// </summary>
     public HuggingFaceConfig HuggingFace { get; set; } = new();
+}
+
+/// <summary>
+/// Ollama local LLM configuration
+/// </summary>
+public class OllamaConfig
+{
+    /// <summary>
+    /// Ollama API base URL
+    /// </summary>
+    public string BaseUrl { get; set; } = "http://localhost:11434";
+
+    /// <summary>
+    /// Default model to use
+    /// </summary>
+    public string DefaultModel { get; set; } = "llama3.1:8b";
+
+    /// <summary>
+    /// Fallback model if default fails
+    /// </summary>
+    public string FallbackModel { get; set; } = "mistral:7b";
+
+    /// <summary>
+    /// Provider priority (lower = higher priority)
+    /// </summary>
+    public int Priority { get; set; } = 0; // Highest priority - local is fastest and free
 }
 
 /// <summary>

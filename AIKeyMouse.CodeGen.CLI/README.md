@@ -8,7 +8,8 @@ AI-powered code generation tool for test automation using the AIKeyMouse.Automat
 - Generate Step Definition classes from Gherkin scenarios
 - Support for Web (Selenium), Mobile (Appium), and Desktop (UI Automation) platforms
 - Customizable Skills system for code generation patterns
-- Multiple LLM providers with automatic failover (Groq, HuggingFace)
+- Multiple LLM providers with automatic failover (Ollama, Groq, HuggingFace)
+- Local-first: Prefers Ollama for privacy and speed, falls back to cloud providers
 - Distributed as .NET tool - easy installation and updates
 
 ## Installation
@@ -38,17 +39,33 @@ dotnet tool update --global AIKeyMouse.CodeGen.CLI
 
 ## Configuration
 
-### API Keys
+### LLM Providers
 
-Set up your LLM provider API keys:
+The tool tries providers in this order:
 
+**1. Ollama (recommended - local, private, unlimited)**
 ```bash
-# Groq (recommended - 14,400 free requests/day)
-export GROQ_API_KEY="gsk_your_api_key_here"
+# Install Ollama from https://ollama.ai
+# Pull a code model
+ollama pull llama3.1:8b
+# Or use codellama, mistral, etc.
+ollama pull codellama:13b
 
-# HuggingFace (backup provider)
+# Start Ollama (usually runs automatically)
+ollama serve
+```
+
+**2. Groq (cloud - 14,400 free requests/day)**
+```bash
+export GROQ_API_KEY="gsk_your_api_key_here"
+```
+
+**3. HuggingFace (cloud - backup provider)**
+```bash
 export HUGGINGFACE_API_KEY="hf_your_api_key_here"
 ```
+
+The tool automatically detects which providers are available and uses them in priority order.
 
 ### Project Configuration (Optional)
 
@@ -189,7 +206,8 @@ Add to `.vscode/tasks.json`:
 ## Technology Stack
 
 - **CLI Framework:** Cocona 2.2.0 (stable)
-- **LLM Providers:** Groq API, HuggingFace Inference API
+- **LLM Providers:** Ollama (local), Groq API, HuggingFace Inference API
+- **Provider Detection:** Fast availability check (<150ms) with 30-second caching
 - **Logging:** Serilog with console/file sinks
 - **Configuration:** Microsoft.Extensions.Configuration (multi-source)
 - **Parsing:** Gherkin, HtmlAgilityPack
