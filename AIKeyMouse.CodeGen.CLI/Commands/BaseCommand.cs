@@ -131,4 +131,12 @@ public abstract class BaseCommand
 
         return response == "y" || response == "yes";
     }
+
+    /// <summary>
+    /// Async wrapper for ConfirmAction
+    /// </summary>
+    protected Task<bool> ConfirmActionAsync(string message, bool defaultYes = false)
+    {
+        return Task.FromResult(ConfirmAction(message, defaultYes));
+    }
 }

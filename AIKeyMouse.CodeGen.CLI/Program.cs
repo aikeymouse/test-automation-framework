@@ -5,6 +5,8 @@ using AIKeyMouse.CodeGen.CLI.Services.Infrastructure;
 using AIKeyMouse.CodeGen.CLI.Services.LLM;
 using AIKeyMouse.CodeGen.CLI.Services.Skills;
 using AIKeyMouse.CodeGen.CLI.Services.Parsers;
+using AIKeyMouse.CodeGen.CLI.Services.CodeGeneration;
+using AIKeyMouse.CodeGen.CLI.Commands;
 using Polly;
 using Polly.Extensions.Http;
 
@@ -65,10 +67,17 @@ class Program
             // Register Parsers
             builder.Services.AddSingleton<GherkinParser>();
             builder.Services.AddSingleton<HtmlParser>();
+            
+            // Register Code Generation services
+            builder.Services.AddSingleton<CodeGenerator>();
+            
+            // Register Commands
+            builder.Services.AddTransient<PageCommand>();
+            builder.Services.AddTransient<StepsCommand>();
 
             var app = builder.Build();
 
-            // Add commands
+            // Add version command
             app.AddCommand("version", () =>
             {
                 Console.WriteLine("AIKeyMouse Code Generator v0.1.0");
@@ -76,7 +85,37 @@ class Program
             })
             .WithDescription("Show version information");
 
-            // Add test command for LLM integration
+            // Add page command
+            app.AddCommand("page", async (
+                [FromService] PageCommand pageCommand,
+                [Option('n', Description = "Page name (e.g., Login)")] string name,
+                [Option('u', Description = "URL to parse HTML from")] string? url = null,
+                [Option('h', Description = "HTML file path to parse")] string? htmlFile = null,
+                [Option('o', Description = "Output directory")] string? output = null,
+                [Option("namespace", Description = "Custom namespace")] string? customNamespace = null,
+                [Option('s', Description = "Skill file path")] string? skillPath = null,
+                [Option('p', Description = "Platform (web, mobile, desktop)")] string platform = "web") =>
+            {
+                return await pageCommand.ExecuteAsync(name, url, htmlFile, output, customNamespace, skillPath, platform);
+            })
+            .WithDescription("Generate a Page Object Model class");
+
+            // Add steps command
+            app.AddCommand("steps", async (
+                [FromService] StepsCommand stepsCommand,
+                [Option('f', Description = "Feature file path")] string feature,
+                [Option('o', Description = "Output directory")] string? output = null,
+                [Option("namespace", Description = "Custom namespace")] string? customNamespace = null,
+                [Option('s', Description = "Skill file path")] string? skillPath = null,
+                [Option('p', Description = "Platform (web, mobile, desktop)")] string platform = "web",
+                [Option("pages", Description = "Comma-separated page object names")] string? pages = null,
+                [Option("scenario", Description = "Specific scenario name")] string? scenarioName = null) =>
+            {
+                return await stepsCommand.ExecuteAsync(feature, output, customNamespace, skillPath, platform, pages, scenarioName);
+            })
+            .WithDescription("Generate Step Definition classes from feature file");
+
+            // Add test-llm command
             app.AddCommand("test-llm", async ([Option('p', Description = "Test prompt")] string prompt) =>
             {
                 var factory = app.Services.GetRequiredService<LlmProviderFactory>();
