@@ -81,11 +81,32 @@ public class PageCommand : BaseCommand
                 }
                 Logger.LogDebug("========================");
                 
-                var elementsList = parsedPage.Elements.Select(e => new Dictionary<string, object>
+                var elementsList = parsedPage.Elements.Select(e => 
                 {
-                    ["name"] = e.Name,
-                    ["type"] = e.Type,
-                    ["locator"] = e.CssSelector ?? e.XPath
+                    var dict = new Dictionary<string, object>
+                    {
+                        ["name"] = e.Name,
+                        ["type"] = e.Type,
+                        ["locator"] = e.CssSelector ?? e.XPath ?? ""
+                    };
+                    
+                    // Add optional attributes if present
+                    if (!string.IsNullOrWhiteSpace(e.Id))
+                        dict["id"] = e.Id;
+                    if (e.Classes.Any())
+                        dict["classes"] = string.Join(" ", e.Classes);
+                    if (!string.IsNullOrWhiteSpace(e.CssSelector))
+                        dict["cssSelector"] = e.CssSelector;
+                    if (!string.IsNullOrWhiteSpace(e.XPath))
+                        dict["xpath"] = e.XPath;
+                    if (e.Attributes.Any())
+                    {
+                        // Format attributes as string for Liquid template
+                        var attrs = string.Join(", ", e.Attributes.Select(kv => $"{kv.Key}=\"{kv.Value}\""));
+                        dict["attributes"] = attrs;
+                    }
+                        
+                    return dict;
                 }).ToList();
                 
                 context["elements"] = elementsList;

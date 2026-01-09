@@ -54,7 +54,7 @@ Generate a Page Object class for a {{ platform }} page with the following detail
 {% if elements -%}
 **Elements:**
 {% for element in elements -%}
-- {{ element.name }} ({{ element.type }}): {{ element.locator }}
+- {{ element.name }} ({{ element.type }}): {{ element.locator }}{% if element.id %} [id="{{ element.id }}"]{% endif %}{% if element.classes %} [class="{{ element.classes }}"]{% endif %}{% if element.attributes %} {attributes: {{ element.attributes }}}{% endif %}
 {% endfor -%}
 {% endif -%}
 {% if actions -%}
@@ -69,11 +69,20 @@ Generate a Page Object class for a {{ platform }} page with the following detail
 - **CRITICAL: All static ElementLocator fields MUST be declared at the top of the class as private readonly fields**
 - **Exception: Dynamic locators where selector values come from method parameters can be created inline in the method**
 - **CRITICAL: If a Page Container selector is provided, use it for _pageContainerLocator instead of "body"**
+- **CRITICAL: Prefer CSS selectors over XPath wherever possible**
+  * If element has id attribute, use `#elementId`
+  * If element has class attribute, use `.className` or `tag.className`
+  * If element has type attribute for inputs, use `input[type="text"]`
+  * For nth-child scenarios within container, use `:nth-of-type(n)` or `:nth-child(n)`
+  * Convert simple XPath patterns: `//input[1]` → `input:nth-of-type(1)`, `//div[@class='x']` → `div.x`
+  * Use XPath only when CSS cannot express the selector (complex predicates, text matching, axes, parent/sibling navigation)
+  * For relative locators inside container: prefer CSS like `input:nth-of-type(1)` over `.//input[1]`
 - **CRITICAL: When container XPath is provided, convert element XPaths to be relative to the container**
-  * Example: If container is at `/html/body/div[2]/div[1]/form[1]` and element is at `/html/body/div[2]/div[1]/form[1]/input[1]`, use `.//input[1]` for the element
-  * Remove the container's XPath prefix from element XPaths and prefix with `.//` for relative searching
+  * Example: If container is at `/html/body/div[2]/div[1]/form[1]` and element is at `/html/body/div[2]/div[1]/form[1]/input[1]`
+  * Check if element has id/class attributes first - if yes, use CSS: `#elementId` or `.className`
+  * Otherwise convert to relative CSS `input:nth-of-type(1)` or XPath `.//input[1]`
+  * Remove the container's XPath prefix from element XPaths
 - Use ElementLocator pattern with private readonly fields for all static locators
-- Use CSS selectors where applicable
 - Include XML documentation
 - Inherit from PageBase with DriverContext parameter
 - Create Init() method for page-level initialization (container element, wait for page load)
