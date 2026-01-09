@@ -1,0 +1,84 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+    
+    <!-- .NET Tool Configuration -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>aikeymouse-codegen</ToolCommandName>
+    <PackageId>AIKeyMouse.CodeGen.CLI</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>aikeymouse</Authors>
+    <Company>AIKeyMouse</Company>
+    <Description>AI-powered code generation tool for test automation using AIKeyMouse.Automation.Framework</Description>
+    <PackageTags>code-generation;ai;llm;test-automation;reqnroll;bdd;cli;dotnet-tool</PackageTags>
+    <PackageProjectUrl>https://github.com/aikeymouse/test-automation-framework</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/aikeymouse/test-automation-framework</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- CLI Framework -->
+    <PackageReference Include="Cocona" Version="2.2.0" />
+    
+    <!-- HTTP & LLM Integration -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0" />
+    <PackageReference Include="System.Net.Http.Json" Version="9.0.1" />
+    
+    <!-- Resilience & Retry -->
+    <PackageReference Include="Polly" Version="8.5.0" />
+    <PackageReference Include="Polly.Extensions.Http" Version="3.0.0" />
+    
+    <!-- Configuration -->
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="9.0.1" />
+    
+    <!-- Dependency Injection -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.1" />
+    
+    <!-- Logging -->
+    <PackageReference Include="Serilog" Version="4.2.0" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    
+    <!-- Parsing Libraries -->
+    <PackageReference Include="Gherkin" Version="30.0.2" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
+    
+    <!-- Templating -->
+    <PackageReference Include="Fluid.Core" Version="2.12.0" />
+    
+    <!-- Code Analysis & Formatting -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.12.0" />
+    
+    <!-- JSON Serialization -->
+    <PackageReference Include="System.Text.Json" Version="9.0.1" />
+    
+    <!-- YAML Support (optional, for skills) -->
+    <PackageReference Include="YamlDotNet" Version="16.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Embed Skills, Templates, and Config as resources -->
+    <None Update="Skills\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Templates\**\*.liquid" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Config\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reference to the automation framework (for understanding types during generation) -->
+    <!-- This will be added once we publish the framework package -->
+    <!-- <PackageReference Include="AIKeyMouse.Automation.Framework" Version="0.0.4" /> -->
+  </ItemGroup>
+
+</Project>
