@@ -48,6 +48,9 @@ Generate a Page Object class for a {{ platform }} page with the following detail
 {% if url -%}
 **URL:** {{ url }}
 {% endif -%}
+{% if containerSelector -%}
+**Page Container:** {{ containerSelector }}
+{% endif -%}
 {% if elements -%}
 **Elements:**
 {% for element in elements -%}
@@ -65,6 +68,7 @@ Generate a Page Object class for a {{ platform }} page with the following detail
 **Requirements:**
 - **CRITICAL: All static ElementLocator fields MUST be declared at the top of the class as private readonly fields**
 - **Exception: Dynamic locators where selector values come from method parameters can be created inline in the method**
+- **CRITICAL: If a Page Container selector is provided, use it for _pageContainerLocator instead of "body"**
 - Use ElementLocator pattern with private readonly fields for all static locators
 - Use CSS selectors where applicable
 - Include XML documentation
