@@ -98,11 +98,6 @@ public class LlmConfiguration
     public int MaxTokens { get; set; } = 2500;
 
     /// <summary>
-    /// HTTP client timeout in seconds (should be >= max provider timeout)
-    /// </summary>
-    public int HttpClientTimeoutSeconds { get; set; } = 300;
-
-    /// <summary>
     /// Request timeout in seconds (used by non-Ollama providers)
     /// </summary>
     public int TimeoutSeconds { get; set; } = 60;

@@ -50,7 +50,10 @@ public class OllamaProvider : ILlmProvider
 
         // Configure HTTP client
         _httpClient.BaseAddress = new Uri(_config.BaseUrl);
-        // Don't set timeout here - we'll use CancellationToken for per-request timeouts
+        // Set timeout to prevent premature cancellation (must be >= provider timeout)
+        _httpClient.Timeout = TimeSpan.FromSeconds(Math.Max(_config.TimeoutSeconds + 10, 310));
+        _logger.LogInformation("OllamaProvider initialized - HttpClient.Timeout: {Timeout}s, Config.TimeoutSeconds: {ConfigTimeout}s", 
+            _httpClient.Timeout.TotalSeconds, _config.TimeoutSeconds);
     }
 
     private bool CheckAvailability()
