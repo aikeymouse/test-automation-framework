@@ -118,6 +118,51 @@ dotnet aikeymouse-codegen page --name Login --platform mobile
 
 # Use custom skill file
 dotnet aikeymouse-codegen page --name Login --skill-path ./skills/custom-page.skill.md
+
+# Specify a page container (component-based approach)
+dotnet aikeymouse-codegen page -n Login -u https://example.com/login -c "#loginForm"
+dotnet aikeymouse-codegen page -n Navigation -u https://example.com -c "nav.main-header"
+dotnet aikeymouse-codegen page -n UserProfile -u https://example.com/profile -c ".profile-container"
+```
+
+#### Container Selector Feature
+
+The `-c` (container) option allows you to generate multiple page objects from the same page by targeting specific components. This enables a component-based Page Object Model architecture.
+
+**Use Cases:**
+- **Forms:** `-c "#loginForm"` - Generate a page object for just the login form
+- **Navigation:** `-c "nav.header"` - Generate a page object for the navigation component
+- **Grids/Tables:** `-c "#userTable"` - Generate a page object for a data table
+- **Sections:** `-c ".dashboard-widgets"` - Generate a page object for a specific section
+
+**Smart Container Detection:**
+
+When no container is specified, the tool automatically detects the main content area using:
+1. Common content IDs: `#content`, `#main`
+2. Common content classes: `.content`, `.main`
+3. Semantic HTML: `<main>`, `div[role='main']`
+4. Fallback: `<body>` (entire page)
+
+**Example - Multi-Component Page:**
+
+```bash
+# Generate separate page objects for different components on the same page
+dotnet aikeymouse-codegen page -n LoginForm -u https://example.com/login -c "#loginForm"
+dotnet aikeymouse-codegen page -n Header -u https://example.com/login -c "nav.site-header"
+dotnet aikeymouse-codegen page -n Footer -u https://example.com/login -c "footer.site-footer"
+```
+
+This approach creates smaller, focused page objects that:
+- Are easier to maintain
+- Have clear responsibilities
+- Can be reused across multiple pages
+- Reduce coupling between page components
+
+**Benefits:**
+- **Scoped Element Detection:** Only finds elements within the specified container
+- **Reusable Components:** Same component (e.g., navigation) can be shared across pages
+- **Better Organization:** Separate page objects for forms, headers, sidebars, etc.
+- **Reduced Complexity:** Smaller, focused classes instead of monolithic page objects
 ```
 
 ### Generate Step Definitions
@@ -146,7 +191,7 @@ Skills define how the CLI generates code using AI in Markdown format (`.skill.md
 ### Built-in Skills
 
 **Web Platform:**
-- `page-object-web.skill.md` - Selenium Page Object with PageFactory pattern
+- `page-object-web.skill.md` - Selenium Page Object with ElementLocator and page container pattern
 - `step-definition-web.skill.md` - Reqnroll step definitions with FluentAssertions
 
 ### Creating Custom Skills
@@ -219,7 +264,7 @@ Add to `.vscode/tasks.json`:
 - `steps` - Generate Reqnroll step definitions
 
 **Built-in Skills:**
-- Web Page Object (Selenium with PageFactory pattern)
+- Web Page Object (Selenium with ElementLocator and page container pattern)
 - Web Step Definitions (Reqnroll with FluentAssertions)
 - **Markdown format** with YAML frontmatter for easy editing
 

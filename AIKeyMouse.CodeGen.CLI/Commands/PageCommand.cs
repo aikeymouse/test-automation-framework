@@ -49,7 +49,8 @@ public class PageCommand : BaseCommand
         [Option('o', Description = "Output directory")] string? output = null,
         [Option("namespace", Description = "Custom namespace")] string? customNamespace = null,
         [Option('s', Description = "Skill file path")] string? skillPath = null,
-        [Option('p', Description = "Platform (web, mobile, desktop)")] string platform = "web")
+        [Option('p', Description = "Platform (web, mobile, desktop)")] string platform = "web",
+        [Option('c', Description = "Page container CSS selector (e.g., '#myForm', '.main-content')")] string? containerSelector = null)
     {
         DisplayInfo($"Generating Page Object: {name}Page");
 
@@ -69,7 +70,7 @@ public class PageCommand : BaseCommand
             // Parse HTML if URL or file provided
             if (!string.IsNullOrWhiteSpace(url) || !string.IsNullOrWhiteSpace(htmlFile))
             {
-                var parsedPage = await ParsePageAsync(url, htmlFile);
+                var parsedPage = await ParsePageAsync(url, htmlFile, containerSelector);
                 
                 // Log parsed elements in detail (debug level)
                 Logger.LogDebug("==== PARSED ELEMENTS ====");
@@ -88,6 +89,13 @@ public class PageCommand : BaseCommand
                 }).ToList();
                 
                 context["elements"] = elementsList;
+
+                // Add container selector to context
+                if (!string.IsNullOrWhiteSpace(parsedPage.ContainerSelector))
+                {
+                    context["containerSelector"] = parsedPage.ContainerSelector;
+                    Logger.LogInformation("Using page container: {Container}", parsedPage.ContainerSelector);
+                }
 
                 // Debug: Log what we're passing to the template
                 Logger.LogDebug("Context elements count: {Count}", elementsList.Count);
@@ -206,18 +214,18 @@ public class PageCommand : BaseCommand
         return await _skillLoader.LoadSkillAsync(builtInSkillPath);
     }
 
-    private async Task<Models.Parsing.ParsedPage> ParsePageAsync(string? url, string? htmlFile)
+    private async Task<Models.Parsing.ParsedPage> ParsePageAsync(string? url, string? htmlFile, string? containerSelector)
     {
         if (!string.IsNullOrWhiteSpace(url))
         {
             DisplayInfo($"Parsing HTML from URL: {url}");
-            return await _htmlParser.ParseFromUrlAsync(url);
+            return await _htmlParser.ParseFromUrlAsync(url, containerSelector);
         }
 
         if (!string.IsNullOrWhiteSpace(htmlFile))
         {
             DisplayInfo($"Parsing HTML from file: {htmlFile}");
-            return _htmlParser.ParseFromFile(htmlFile);
+            return _htmlParser.ParseFromFile(htmlFile, containerSelector);
         }
 
         throw new InvalidOperationException("No URL or HTML file provided");

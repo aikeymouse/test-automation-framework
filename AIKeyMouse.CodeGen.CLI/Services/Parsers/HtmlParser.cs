@@ -22,37 +22,42 @@ public class HtmlParser
     /// <summary>
     /// Parse HTML from a URL
     /// </summary>
-    public async Task<ParsedPage> ParseFromUrlAsync(string url, CancellationToken cancellationToken = default)
+    public async Task<ParsedPage> ParseFromUrlAsync(string url, string? containerSelector = null, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Fetching HTML from URL: {Url}", url);
 
         var html = await _httpClient.GetStringAsync(url, cancellationToken);
-        return ParseHtml(html, url);
+        return ParseHtml(html, url, containerSelector);
     }
 
     /// <summary>
     /// Parse HTML from file
     /// </summary>
-    public ParsedPage ParseFromFile(string filePath)
+    public ParsedPage ParseFromFile(string filePath, string? containerSelector = null)
     {
         _logger.LogInformation("Parsing HTML file: {FilePath}", filePath);
 
         var html = File.ReadAllText(filePath);
-        return ParseHtml(html, filePath);
+        return ParseHtml(html, filePath, containerSelector);
     }
 
     /// <summary>
     /// Parse HTML content
     /// </summary>
-    public ParsedPage ParseHtml(string html, string source)
+    public ParsedPage ParseHtml(string html, string source, string? containerSelector = null)
     {
         var doc = new HtmlDocument();
         doc.LoadHtml(html);
 
+        // Determine page container
+        var containerInfo = DeterminePageContainer(doc, containerSelector);
+
         var page = new ParsedPage
         {
             Url = source,
-            Title = doc.DocumentNode.SelectSingleNode("//title")?.InnerText.Trim()
+            Title = doc.DocumentNode.SelectSingleNode("//title")?.InnerText.Trim(),
+            ContainerSelector = containerInfo.Selector,
+            ContainerType = containerInfo.Type
         };
 
         // Parse all interactive elements
@@ -328,5 +333,47 @@ public class HtmlParser
 
         return string.Join("", words.Select(w => 
             char.ToUpper(w[0]) + w.Substring(1).ToLower()));
+    }
+
+    /// <summary>
+    /// Determine the page container element
+    /// </summary>
+    private (string Selector, string Type) DeterminePageContainer(HtmlDocument doc, string? userSelector)
+    {
+        // If user specified a selector, use it
+        if (!string.IsNullOrWhiteSpace(userSelector))
+        {
+            _logger.LogDebug("Using user-specified container selector: {Selector}", userSelector);
+            return (userSelector, "CssSelector");
+        }
+
+        // Try to find main content div (common patterns)
+        var mainSelectors = new[]
+        {
+            "#content",
+            "#main",
+            "#main-content",
+            ".content",
+            ".main",
+            ".main-content",
+            "main",
+            "div[role='main']"
+        };
+
+        foreach (var selector in mainSelectors)
+        {
+            var node = doc.DocumentNode.SelectSingleNode($"//*[@id='{selector.TrimStart('#')}']") 
+                ?? doc.DocumentNode.SelectSingleNode($"//*[@class='{selector.TrimStart('.')}']");
+            
+            if (node != null)
+            {
+                _logger.LogDebug("Found main content container: {Selector}", selector);
+                return (selector, "CssSelector");
+            }
+        }
+
+        // Fallback to body
+        _logger.LogDebug("No specific container found, using body");
+        return ("body", "CssSelector");
     }
 }

@@ -100,9 +100,10 @@ class Program
                 [Option('o', Description = "Output directory")] string? output = null,
                 [Option("namespace", Description = "Custom namespace")] string? customNamespace = null,
                 [Option('s', Description = "Skill file path")] string? skillPath = null,
-                [Option('p', Description = "Platform (web, mobile, desktop)")] string platform = "web") =>
+                [Option('p', Description = "Platform (web, mobile, desktop)")] string platform = "web",
+                [Option('c', Description = "Page container CSS selector (e.g., '#myForm', '.main-content')")] string? containerSelector = null) =>
             {
-                return await pageCommand.ExecuteAsync(name, url, htmlFile, output, customNamespace, skillPath, platform);
+                return await pageCommand.ExecuteAsync(name, url, htmlFile, output, customNamespace, skillPath, platform, containerSelector);
             })
             .WithDescription("Generate a Page Object Model class");
 
