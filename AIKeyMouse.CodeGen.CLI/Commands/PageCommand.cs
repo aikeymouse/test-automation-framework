@@ -107,13 +107,6 @@ public class PageCommand : BaseCommand
             var userPrompt = await _promptBuilder.BuildPromptAsync(skill, context);
             var systemPrompt = _promptBuilder.BuildSystemMessage(skill);
 
-            // Log prompts at debug level
-            Logger.LogDebug("==== SYSTEM PROMPT ====");
-            Logger.LogDebug("{SystemPrompt}", systemPrompt);
-            Logger.LogDebug("==== USER PROMPT ====");
-            Logger.LogDebug("{UserPrompt}", userPrompt);
-            Logger.LogDebug("======================");
-
             // Generate code using LLM
             DisplayInfo($"Generating code using {skill.Name}...");
             var llmRequest = new LlmRequest
@@ -123,9 +116,6 @@ public class PageCommand : BaseCommand
                 Temperature = (float)(skill.LlmParams?.Temperature ?? Config.Llm.Temperature),
                 MaxTokens = skill.LlmParams?.MaxTokens ?? Config.Llm.MaxTokens
             };
-
-            Logger.LogDebug("LLM Request - Temperature: {Temperature}, MaxTokens: {MaxTokens}",
-                llmRequest.Temperature, llmRequest.MaxTokens);
 
             var response = await _llmFactory.GenerateWithFailoverAsync(llmRequest);
             

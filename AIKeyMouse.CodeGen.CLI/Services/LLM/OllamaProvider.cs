@@ -87,7 +87,8 @@ public class OllamaProvider : ILlmProvider
     {
         var model = request.Model ?? _config.DefaultModel;
         
-        _logger.LogDebug("Sending request to Ollama with model {Model}", model);
+        _logger.LogInformation("Using Ollama model: {Model} (Temperature: {Temperature}, MaxTokens: {MaxTokens})", 
+            model, request.Temperature, request.MaxTokens);
 
         // Use configured timeout for code generation
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(_config.TimeoutSeconds));
@@ -121,6 +122,12 @@ public class OllamaProvider : ILlmProvider
             }
         };
 
+        _logger.LogDebug("==== OLLAMA REQUEST ====");
+        _logger.LogDebug("Model: {Model}", model);
+        _logger.LogDebug("System Message: {SystemMessage}", request.SystemMessage ?? "(none)");
+        _logger.LogDebug("User Prompt: {Prompt}", request.Prompt);
+        _logger.LogDebug("========================");
+
         var response = await _httpClient.PostAsJsonAsync(
             "/api/generate",
             requestBody,
@@ -136,9 +143,12 @@ public class OllamaProvider : ILlmProvider
             throw new InvalidOperationException("Failed to deserialize Ollama response");
         }
 
-        _logger.LogDebug(
-            "Received response from Ollama: {Tokens} tokens",
-            result.EvalCount);
+        _logger.LogDebug("==== OLLAMA RESPONSE ====");
+        _logger.LogDebug("Tokens: Prompt={PromptTokens}, Completion={CompletionTokens}, Total={TotalTokens}",
+            result.PromptEvalCount, result.EvalCount, result.PromptEvalCount + result.EvalCount);
+        _logger.LogDebug("Response length: {Length} characters", result.Response.Length);
+        _logger.LogDebug("Response content: {Content}", result.Response);
+        _logger.LogDebug("=========================");
 
         return new LlmResponse
         {
