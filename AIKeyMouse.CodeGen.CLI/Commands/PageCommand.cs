@@ -94,7 +94,10 @@ public class PageCommand : BaseCommand
                 if (!string.IsNullOrWhiteSpace(parsedPage.ContainerSelector))
                 {
                     context["containerSelector"] = parsedPage.ContainerSelector;
-                    Logger.LogInformation("Using page container: {Container}", parsedPage.ContainerSelector);
+                    context["containerXPath"] = parsedPage.ContainerXPath ?? "";
+                    context["containerTag"] = parsedPage.ContainerTag ?? "";
+                    Logger.LogInformation("Using page container: {Container} ({Tag} at {XPath})", 
+                        parsedPage.ContainerSelector, parsedPage.ContainerTag, parsedPage.ContainerXPath);
                 }
 
                 // Debug: Log what we're passing to the template

@@ -57,7 +57,9 @@ public class HtmlParser
             Url = source,
             Title = doc.DocumentNode.SelectSingleNode("//title")?.InnerText.Trim(),
             ContainerSelector = containerInfo.Selector,
-            ContainerType = containerInfo.Type
+            ContainerType = containerInfo.Type,
+            ContainerXPath = containerInfo.XPath,
+            ContainerTag = containerInfo.Tag
         };
 
         // Parse all interactive elements
@@ -338,42 +340,72 @@ public class HtmlParser
     /// <summary>
     /// Determine the page container element
     /// </summary>
-    private (string Selector, string Type) DeterminePageContainer(HtmlDocument doc, string? userSelector)
+    private (string Selector, string Type, string XPath, string Tag) DeterminePageContainer(HtmlDocument doc, string? userSelector)
     {
+        HtmlNode? containerNode = null;
+        string selector;
+        
         // If user specified a selector, use it
         if (!string.IsNullOrWhiteSpace(userSelector))
         {
             _logger.LogDebug("Using user-specified container selector: {Selector}", userSelector);
-            return (userSelector, "CssSelector");
+            selector = userSelector;
+            
+            // Try to find the node for this selector
+            if (userSelector.StartsWith("#"))
+            {
+                var id = userSelector.TrimStart('#');
+                containerNode = doc.DocumentNode.SelectSingleNode($"//*[@id='{id}']");
+            }
+            else if (userSelector.StartsWith("."))
+            {
+                var className = userSelector.TrimStart('.');
+                containerNode = doc.DocumentNode.SelectSingleNode($"//*[contains(@class, '{className}')]");
+            }
+            else
+            {
+                // Assume it's a tag name or complex selector
+                containerNode = doc.DocumentNode.SelectSingleNode($"//{userSelector}");
+            }
+            
+            if (containerNode != null)
+            {
+                return (selector, "CssSelector", containerNode.XPath, containerNode.Name);
+            }
+            
+            // If node not found, return selector with body fallback
+            _logger.LogWarning("Container selector {Selector} not found, using body", userSelector);
+            containerNode = doc.DocumentNode.SelectSingleNode("//body");
+            return ("body", "CssSelector", containerNode?.XPath ?? "/html/body", "body");
         }
 
         // Try to find main content div (common patterns)
         var mainSelectors = new[]
         {
-            "#content",
-            "#main",
-            "#main-content",
-            ".content",
-            ".main",
-            ".main-content",
-            "main",
-            "div[role='main']"
+            ("#content", "//*[@id='content']"),
+            ("#main", "//*[@id='main']"),
+            ("#main-content", "//*[@id='main-content']"),
+            (".content", "//*[contains(@class, 'content')]"),
+            (".main", "//*[contains(@class, 'main')]"),
+            (".main-content", "//*[contains(@class, 'main-content')]"),
+            ("main", "//main"),
+            ("div[role='main']", "//div[@role='main']")
         };
 
-        foreach (var selector in mainSelectors)
+        foreach (var (sel, xpath) in mainSelectors)
         {
-            var node = doc.DocumentNode.SelectSingleNode($"//*[@id='{selector.TrimStart('#')}']") 
-                ?? doc.DocumentNode.SelectSingleNode($"//*[@class='{selector.TrimStart('.')}']");
+            containerNode = doc.DocumentNode.SelectSingleNode(xpath);
             
-            if (node != null)
+            if (containerNode != null)
             {
-                _logger.LogDebug("Found main content container: {Selector}", selector);
-                return (selector, "CssSelector");
+                _logger.LogDebug("Found main content container: {Selector}", sel);
+                return (sel, "CssSelector", containerNode.XPath, containerNode.Name);
             }
         }
 
         // Fallback to body
         _logger.LogDebug("No specific container found, using body");
-        return ("body", "CssSelector");
+        containerNode = doc.DocumentNode.SelectSingleNode("//body");
+        return ("body", "CssSelector", containerNode?.XPath ?? "/html/body", "body");
     }
 }

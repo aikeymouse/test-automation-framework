@@ -9,6 +9,8 @@ public class ParsedPage
     public string? Title { get; set; }
     public string? ContainerSelector { get; set; }
     public string? ContainerType { get; set; } // CssSelector, XPath, etc.
+    public string? ContainerXPath { get; set; } // XPath of the container element
+    public string? ContainerTag { get; set; } // HTML tag of the container (form, div, etc.)
     public List<ParsedElement> Elements { get; set; } = new();
     public List<ParsedForm> Forms { get; set; } = new();
     public List<ParsedLink> Links { get; set; } = new();

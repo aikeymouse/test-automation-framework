@@ -49,7 +49,7 @@ Generate a Page Object class for a {{ platform }} page with the following detail
 **URL:** {{ url }}
 {% endif -%}
 {% if containerSelector -%}
-**Page Container:** {{ containerSelector }}
+**Page Container:** {{ containerSelector }}{% if containerTag %} ({{ containerTag }} element{% if containerXPath %} at {{ containerXPath }}{% endif %}){% endif %}
 {% endif -%}
 {% if elements -%}
 **Elements:**
@@ -69,6 +69,9 @@ Generate a Page Object class for a {{ platform }} page with the following detail
 - **CRITICAL: All static ElementLocator fields MUST be declared at the top of the class as private readonly fields**
 - **Exception: Dynamic locators where selector values come from method parameters can be created inline in the method**
 - **CRITICAL: If a Page Container selector is provided, use it for _pageContainerLocator instead of "body"**
+- **CRITICAL: When container XPath is provided, convert element XPaths to be relative to the container**
+  * Example: If container is at `/html/body/div[2]/div[1]/form[1]` and element is at `/html/body/div[2]/div[1]/form[1]/input[1]`, use `.//input[1]` for the element
+  * Remove the container's XPath prefix from element XPaths and prefix with `.//` for relative searching
 - Use ElementLocator pattern with private readonly fields for all static locators
 - Use CSS selectors where applicable
 - Include XML documentation
