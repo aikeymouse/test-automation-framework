@@ -50,7 +50,7 @@ Generate a step definition class for the following scenario:
 {% if page.methodsFound -%}
   Available methods:
 {% for method in page.methods -%}
-  * {{ method.returnType }} {{ method.name }}({% for param in method.parameters -%}{{ param.type }} {{ param.name }}{% if not forloop.last %}, {% endif %}{% endfor -%})
+  * {{ method.returnType }} {{ method.name }}({% for param in method.parameters -%}{{ param.type }} {{ param.name }}{% unless for.last %}, {% endunless %}{% endfor -%})
 {% endfor -%}
 {% else -%}
   (Page file not found - infer method names from steps)
