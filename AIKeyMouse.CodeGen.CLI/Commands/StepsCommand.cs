@@ -49,6 +49,7 @@ public class StepsCommand : BaseCommand
         [Option('s', Description = "Skill file path")] string? skillPath = null,
         [Option('p', Description = "Comma-separated page object names")] string? pages = null,
         [Option("platform", Description = "Platform (web, mobile, desktop)")] string platform = "web",
+        [Option("page-files", Description = "Comma-separated page object file paths")] string? pageFiles = null,
         [Option("scenario", Description = "Specific scenario name to generate")] string? scenarioName = null)
     {
         DisplayInfo($"Generating Step Definitions from: {feature}");
@@ -84,7 +85,7 @@ public class StepsCommand : BaseCommand
             }
 
             // Parse and add page objects with methods
-            var pageObjects = await ParsePageObjectsAsync(pages, parsedFeature);
+            var pageObjects = await ParsePageObjectsAsync(pages, parsedFeature, pageFiles);
             if (pageObjects.Count > 0)
             {
                 context["pages"] = pageObjects;
@@ -203,7 +204,7 @@ public class StepsCommand : BaseCommand
         return await _skillLoader.LoadSkillAsync(builtInSkillPath);
     }
 
-    private async Task<List<Dictionary<string, object>>> ParsePageObjectsAsync(string? pageNames, Models.Parsing.ParsedFeature feature)
+    private async Task<List<Dictionary<string, object>>> ParsePageObjectsAsync(string? pageNames, Models.Parsing.ParsedFeature feature, string? pageFilePaths = null)
     {
         var result = new List<Dictionary<string, object>>();
         
@@ -220,6 +221,16 @@ public class StepsCommand : BaseCommand
             pages = _gherkinParser.ExtractPageObjectNames(feature);
         }
 
+        // Parse page file paths if provided
+        var pageFilePathsList = new List<string>();
+        if (!string.IsNullOrWhiteSpace(pageFilePaths))
+        {
+            pageFilePathsList = pageFilePaths.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .Where(p => File.Exists(p))
+                .ToList();
+        }
+
         foreach (var pageName in pages)
         {
             var pageInfo = new Dictionary<string, object>
@@ -229,11 +240,12 @@ public class StepsCommand : BaseCommand
                 ["methods"] = new List<Dictionary<string, object>>()
             };
 
-            // Try to find page object file
-            var pageFiles = await FileService.FindFilesAsync($"Pages/**/{pageName}Page.cs");
-            if (pageFiles.Any())
+            // Try to find matching page file by name
+            var pageFile = pageFilePathsList.FirstOrDefault(f => 
+                Path.GetFileNameWithoutExtension(f).Equals($"{pageName}Page", StringComparison.OrdinalIgnoreCase));
+            
+            if (pageFile != null)
             {
-                var pageFile = pageFiles.First();
                 DisplayInfo($"  Found page file: {pageFile}");
                 
                 var methods = await ParsePageMethodsAsync(pageFile);

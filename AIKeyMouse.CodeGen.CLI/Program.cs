@@ -116,9 +116,10 @@ class Program
                 [Option('s', Description = "Skill file path")] string? skillPath = null,
                 [Option("platform", Description = "Platform (web, mobile, desktop)")] string platform = "web",
                 [Option('p', Description = "Comma-separated page object names")] string? pages = null,
+                [Option("page-files", Description = "Comma-separated page object file paths")] string? pageFiles = null,
                 [Option("scenario", Description = "Specific scenario name")] string? scenarioName = null) =>
             {
-                return await stepsCommand.ExecuteAsync(feature, output, customNamespace, skillPath, pages, platform, scenarioName);
+                return await stepsCommand.ExecuteAsync(feature, output, customNamespace, skillPath, pages, platform, pageFiles, scenarioName);
             })
             .WithDescription("Generate Step Definition classes from feature file");
 

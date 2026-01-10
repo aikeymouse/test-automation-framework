@@ -249,10 +249,44 @@ public class FileService
     {
         _logger.LogDebug("Searching for files matching: {Pattern}", pattern);
         
-        // Parse the pattern to determine base directory and search pattern
-        var parts = pattern.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
-        var baseDir = parts.Length > 0 ? parts[0] : ".";
-        var searchPattern = parts.Length > 1 ? string.Join(Path.DirectorySeparatorChar, parts.Skip(1)) : "*";
+        // Handle absolute paths (Unix/Mac start with /, Windows with drive letter)
+        string baseDir;
+        string searchPattern;
+        
+        if (Path.IsPathRooted(pattern))
+        {
+            // For absolute paths, find the first ** or wildcard
+            var wildcardIndex = pattern.IndexOf("**", StringComparison.Ordinal);
+            if (wildcardIndex == -1)
+            {
+                wildcardIndex = pattern.IndexOf('*');
+            }
+            
+            if (wildcardIndex > 0)
+            {
+                // Split at the last directory separator before the wildcard
+                var lastSepBeforeWildcard = pattern.LastIndexOf(Path.DirectorySeparatorChar, wildcardIndex);
+                if (lastSepBeforeWildcard == -1)
+                {
+                    lastSepBeforeWildcard = pattern.LastIndexOf(Path.AltDirectorySeparatorChar, wildcardIndex);
+                }
+                
+                baseDir = lastSepBeforeWildcard > 0 ? pattern.Substring(0, lastSepBeforeWildcard) : Path.GetPathRoot(pattern) ?? ".";
+                searchPattern = pattern.Substring(lastSepBeforeWildcard + 1);
+            }
+            else
+            {
+                baseDir = Path.GetDirectoryName(pattern) ?? ".";
+                searchPattern = Path.GetFileName(pattern);
+            }
+        }
+        else
+        {
+            // Parse relative pattern to determine base directory and search pattern
+            var parts = pattern.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+            baseDir = parts.Length > 0 ? parts[0] : ".";
+            searchPattern = parts.Length > 1 ? string.Join(Path.DirectorySeparatorChar, parts.Skip(1)) : "*";
+        }
         
         var results = new List<string>();
         
@@ -289,7 +323,24 @@ public class FileService
     private bool MatchesPattern(string path, string pattern)
     {
         // Simple pattern matching - supports ** for any subdirectory
-        var patternRegex = "^" + System.Text.RegularExpressions.Regex.Escape(pattern)
+        // Handle ** at the start specially - it should match zero or more directories
+        var patternForRegex = pattern;
+        if (patternForRegex.StartsWith("**/") || patternForRegex.StartsWith("**\\"))
+        {
+            patternForRegex = patternForRegex.Substring(3);
+            // Make the pattern match with or without directory prefix
+            var patternRegex = System.Text.RegularExpressions.Regex.Escape(patternForRegex)
+                .Replace("\\*\\*", ".*")
+                .Replace("\\*", "[^/\\\\]*")
+                .Replace("\\?", ".");
+            
+            return System.Text.RegularExpressions.Regex.IsMatch(
+                path.Replace('\\', '/'),
+                "^(.*[/\\\\])?" + patternRegex.Replace('\\', '/') + "$",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        }
+        
+        var normalPatternRegex = "^" + System.Text.RegularExpressions.Regex.Escape(patternForRegex)
             .Replace("\\*\\*", ".*")
             .Replace("\\*", "[^/\\\\]*")
             .Replace("\\?", ".")
@@ -297,7 +348,7 @@ public class FileService
             
         return System.Text.RegularExpressions.Regex.IsMatch(
             path.Replace('\\', '/'),
-            patternRegex.Replace('\\', '/'),
+            normalPatternRegex.Replace('\\', '/'),
             System.Text.RegularExpressions.RegexOptions.IgnoreCase);
     }
 }
